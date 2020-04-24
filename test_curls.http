@@ -1,0 +1,28 @@
+POST http://localhost:8080/sign-in
+content-type: application/json
+
+{
+    "username": "bass",
+    "password": "12345678"
+}
+
+###
+
+POST http://localhost:8080/sign-up
+content-type: application/json
+
+{
+    "username": "bass",
+    "password": "12345678"
+}
+
+###
+
+POST http://localhost:8080/check-token
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODc3OTAwMzIsImlhdCI6MTU4NzcwMzYzMiwiaXNzIjoiYWlzX3N1ZyIsInVzZXJuYW1lIjoiYmFzcyJ9.2rgLuXKAIzJNglMtMnls4_5RTUx3mDnDjHEDoP0FzZY
+content-type: application/json
+
+{
+  "username": "bass",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1ODc3OTAwMzIsImlhdCI6MTU4NzcwMzYzMiwiaXNzIjoiYWlzX3N1ZyIsInVzZXJuYW1lIjoiYmFzcyJ9.2rgLuXKAIzJNglMtMnls4_5RTUx3mDnDjHEDoP0FzZY"
+}
