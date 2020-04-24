@@ -1,5 +1,5 @@
 BACKEND_PATH=.
-SERVER_PATH=$(BACKEND_PATH)/cmd/server/main.go
+SERVER_PATH=$(BACKEND_PATH)/cmd/api/main.go
 BACKEND_PORT=8080
 
 BACKEND_IMAGE=ais-sug-apiserver
