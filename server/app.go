@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -16,6 +17,7 @@ import (
 	"github.com/WeCodingNow/AIS_SUG_backend/config"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
+	"github.com/spf13/viper"
 
 	echoLog "github.com/labstack/gommon/log"
 
@@ -29,7 +31,7 @@ type App struct {
 }
 
 const (
-	apiURL = "localhost"
+	apiURL = "*"
 )
 
 func (a *App) Run(port string) error {
@@ -85,16 +87,28 @@ func NewApp() *App {
 	return &App{
 		authUC: authusecase.NewAuthUseCase(
 			userRepo,
-			"123",
-			[]byte{'1', '2', '3'},
-			24*3600,
+			viper.GetString("auth.hash_salt"),
+			[]byte(viper.GetString("auth.signing_key")),
+			viper.GetDuration("auth.token_ttl"),
 		),
 	}
 }
 
+func makePostgresString() string {
+	return fmt.Sprintf(
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		viper.GetString("postgres.host"), viper.GetInt("postgres.port"),
+		viper.GetString("postgres.user"), viper.GetString("postgres.password"),
+		viper.GetString("postgres.dbname"),
+	)
+}
+
 func initDB() *sql.DB {
-	config := config.Config()
-	db, err := sql.Open("postgres", config.PostgresConfig.ToString())
+	if err := config.Init(); err != nil {
+		panic(err)
+	}
+
+	db, err := sql.Open("postgres", makePostgresString())
 
 	if err != nil {
 		panic(err)

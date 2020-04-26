@@ -73,7 +73,7 @@ func (a *AuthUseCase) ParseToken(ctx context.Context, accessToken string) (*mode
 		return user, nil
 	}
 
-	return nil, fmt.Errorf("Invalid access token")
+	return nil, auth.ErrInvalidAccessToken
 }
 
 func (a *AuthUseCase) SignIn(ctx context.Context, username, password string) (string, error) {
