@@ -38,8 +38,6 @@ func (a *App) Run(port string) error {
 	e := echo.New()
 	e.Debug = true
 
-	// a.authUC.ParseToken()
-
 	e.Logger.SetLevel(echoLog.DEBUG)
 	e.Use(
 		middleware.Logger(),
