@@ -36,7 +36,21 @@ func NewAuthUseCase(
 	}
 }
 
-func (a *AuthUseCase) SignUp(ctx context.Context, username, password string) error {
+// func (a *AuthUseCase) SignUp(ctx context.Context, username, password string) error {
+// 	pwd := sha1.New()
+// 	pwd.Write([]byte(password))
+// 	pwd.Write([]byte(a.hashSalt))
+// 	hashedPwd := fmt.Sprintf("%x", pwd.Sum(nil))
+
+// 	user := &models.User{
+// 		Username: username,
+// 		Password: hashedPwd,
+// 	}
+
+// 	return a.userRepo.CreateUser(ctx, user)
+// }
+
+func (a *AuthUseCase) CreateUser(ctx context.Context, username, password string, roleId int) error {
 	pwd := sha1.New()
 	pwd.Write([]byte(password))
 	pwd.Write([]byte(a.hashSalt))
@@ -47,7 +61,12 @@ func (a *AuthUseCase) SignUp(ctx context.Context, username, password string) err
 		Password: hashedPwd,
 	}
 
-	return a.userRepo.CreateUser(ctx, user)
+	role := &models.Role{
+		ID: roleId,
+	}
+
+	return a.userRepo.CreateUser(ctx, user, role)
+
 }
 
 func (a *AuthUseCase) ParseToken(ctx context.Context, accessToken string) (*models.User, error) {

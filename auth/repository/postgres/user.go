@@ -2,9 +2,9 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
 	"log"
 
+	"github.com/WeCodingNow/AIS_SUG_backend/auth"
 	"github.com/WeCodingNow/AIS_SUG_backend/models"
 )
 
@@ -21,7 +21,7 @@ func toPostgresUser(u *models.User) *User {
 	}
 }
 
-func toModel(u *User) *models.User {
+func toModelUser(u *User) *models.User {
 	return &models.User{
 		ID:       u.ID,
 		Username: u.Username,
@@ -29,29 +29,48 @@ func toModel(u *User) *models.User {
 	}
 }
 
-type UserRepository struct {
-	db *sql.DB
-}
+func (r UserRepository) CreateUser(ctx context.Context, user *models.User, role *models.Role) error {
+	userModel := toPostgresUser(user)
+	roleModel := toPostgresRole(role)
 
-func NewUserRepository(db *sql.DB) *UserRepository {
-	return &UserRepository{
-		db: db,
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
 	}
-}
 
-func (r UserRepository) CreateUser(ctx context.Context, user *models.User) error {
-	model := toPostgresUser(user)
-
-	row := r.db.QueryRowContext(
-		ctx, `INSERT INTO ais_user(username,password) VALUES ( $1, $2 ) RETURNING id;`,
-		model.Username, model.Password,
+	row := tx.QueryRowContext(ctx,
+		`INSERT INTO ais_user(username,password) VALUES ( $1, $2 ) RETURNING id;`,
+		userModel.Username, userModel.Password,
 	)
 
-	var newId int
-	if err := row.Scan(&newId); err != nil {
+	var newID int
+	if err := row.Scan(&newID); err != nil {
+		tx.Rollback()
 		return err
 	} else {
-		user.ID = newId
+		user.ID = newID
+	}
+
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	log.Print(roleModel, userModel)
+	_, err = tx.ExecContext(ctx,
+		`INSERT INTO ais_role_binding(ais_user_class_id, ais_user_id, user_class_confirmed) VALUES ( $1, $2, true)`,
+		roleModel.ID, newID,
+	)
+
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -66,10 +85,10 @@ func (r UserRepository) GetUser(ctx context.Context, username, password string) 
 	user := new(User)
 	if err := row.Scan(&user.ID, &user.Username, &user.Password); err != nil {
 		log.Printf("PG err: %+v", err)
-		return nil, err
+		return nil, auth.ErrUserNotFound
 	}
 
-	return toModel(user), nil
+	return toModelUser(user), nil
 }
 
 func (r UserRepository) GetUserByName(ctx context.Context, username string) (*models.User, error) {
@@ -84,5 +103,5 @@ func (r UserRepository) GetUserByName(ctx context.Context, username string) (*mo
 		return nil, err
 	}
 
-	return toModel(user), nil
+	return toModelUser(user), nil
 }

@@ -2,19 +2,26 @@ package server
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
+	"github.com/WeCodingNow/AIS_SUG_backend/ais"
+	"github.com/WeCodingNow/AIS_SUG_backend/ais_auth"
 	"github.com/WeCodingNow/AIS_SUG_backend/auth"
+
 	authhttp "github.com/WeCodingNow/AIS_SUG_backend/auth/delivery/http"
 	authpostgres "github.com/WeCodingNow/AIS_SUG_backend/auth/repository/postgres"
 	authusecase "github.com/WeCodingNow/AIS_SUG_backend/auth/usecase"
-	"github.com/WeCodingNow/AIS_SUG_backend/config"
+
+	aishttp "github.com/WeCodingNow/AIS_SUG_backend/ais/delivery/http"
+	aispostgres "github.com/WeCodingNow/AIS_SUG_backend/ais/repository/postgres"
+	aisusecase "github.com/WeCodingNow/AIS_SUG_backend/ais/usecase"
+
+	aisauthusecase "github.com/WeCodingNow/AIS_SUG_backend/ais_auth/usecase"
+
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	"github.com/spf13/viper"
@@ -27,7 +34,9 @@ import (
 type App struct {
 	e *echo.Echo
 
-	authUC auth.UseCase
+	authUC    auth.UseCase
+	aisUC     ais.UseCase
+	aisAuthUC ais_auth.UseCase
 }
 
 const (
@@ -39,6 +48,7 @@ func (a *App) Run(port string) error {
 	e.Debug = true
 
 	e.Logger.SetLevel(echoLog.DEBUG)
+	e.Pre(middleware.RemoveTrailingSlash())
 	e.Use(
 		middleware.Logger(),
 		middleware.CORSWithConfig(middleware.CORSConfig{
@@ -50,6 +60,7 @@ func (a *App) Run(port string) error {
 		}),
 	)
 	authhttp.RegisterHTTPEndpoints(e, a.authUC)
+	aishttp.RegisterHTTPEndpoints(e, a.aisUC)
 
 	e.Server = &http.Server{
 		Addr:           ":" + port,
@@ -81,41 +92,21 @@ func NewApp() *App {
 	db := initDB()
 
 	userRepo := authpostgres.NewUserRepository(db)
+	authUC := authusecase.NewAuthUseCase(
+		userRepo,
+		viper.GetString("auth.hash_salt"),
+		[]byte(viper.GetString("auth.signing_key")),
+		viper.GetDuration("auth.token_ttl"),
+	)
+
+	aisRepo := aispostgres.NewAisRepository(db)
+	aisUC := aisusecase.NewAisUseCase(aisRepo)
+
+	aisAuthUC := aisauthusecase.NewAisAuthUseCase(aisUC, authUC)
 
 	return &App{
-		authUC: authusecase.NewAuthUseCase(
-			userRepo,
-			viper.GetString("auth.hash_salt"),
-			[]byte(viper.GetString("auth.signing_key")),
-			viper.GetDuration("auth.token_ttl"),
-		),
+		authUC:    authUC,
+		aisUC:     aisUC,
+		aisAuthUC: aisAuthUC,
 	}
-}
-
-func makePostgresString() string {
-	return fmt.Sprintf(
-		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		viper.GetString("postgres.host"), viper.GetInt("postgres.port"),
-		viper.GetString("postgres.user"), viper.GetString("postgres.password"),
-		viper.GetString("postgres.dbname"),
-	)
-}
-
-func initDB() *sql.DB {
-	if err := config.Init(); err != nil {
-		panic(err)
-	}
-
-	db, err := sql.Open("postgres", makePostgresString())
-
-	if err != nil {
-		panic(err)
-	}
-
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-
-	return db
 }
