@@ -3,9 +3,9 @@ package models
 import "time"
 
 type Mark struct {
-	ID    int
-	date  time.Time
-	value int
+	ID int
 	*ControlEvent
 	*Student
+	date  time.Time
+	value int
 }

@@ -5,4 +5,5 @@ type Residence struct {
 	address   string
 	city      string
 	community bool
+	Students  []*Student
 }
