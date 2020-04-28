@@ -55,3 +55,27 @@ func (ais AisUseCase) GetContact(ctx context.Context, contactID int) (*models.Co
 func (ais AisUseCase) GetAllContacts(ctx context.Context) ([]*models.Contact, error) {
 	return ais.aisRepo.GetAllContacts(ctx)
 }
+
+func (ais AisUseCase) GetResidence(ctx context.Context, residenceID int) (*models.Residence, error) {
+	return ais.aisRepo.GetResidence(ctx, residenceID)
+}
+
+func (ais AisUseCase) GetAllResidences(ctx context.Context) ([]*models.Residence, error) {
+	return ais.aisRepo.GetAllResidences(ctx)
+}
+
+func (ais AisUseCase) GetControlEventType(ctx context.Context, controlEventTypeID int) (*models.ControlEventType, error) {
+	return ais.aisRepo.GetControlEventType(ctx, controlEventTypeID)
+}
+
+func (ais AisUseCase) GetAllControlEventTypes(ctx context.Context) ([]*models.ControlEventType, error) {
+	return ais.aisRepo.GetAllControlEventTypes(ctx)
+}
+
+func (ais AisUseCase) GetDiscipline(ctx context.Context, controlEventTypeID int) (*models.Discipline, error) {
+	return ais.aisRepo.GetDiscipline(ctx, controlEventTypeID)
+}
+
+func (ais AisUseCase) GetAllDisciplines(ctx context.Context) ([]*models.Discipline, error) {
+	return ais.aisRepo.GetAllDisciplines(ctx)
+}

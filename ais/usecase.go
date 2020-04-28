@@ -27,11 +27,11 @@ type UseCase interface {
 	GetContact(ctx context.Context, contactID int) (*models.Contact, error)
 	GetAllContacts(ctx context.Context) ([]*models.Contact, error)
 
-	// GetResidence(ctx context.Context, residenceID int) (*models.Residence, error)
-	// GetAllResidences(ctx context.Context) ([]*models.Residence, error)
+	GetResidence(ctx context.Context, residenceID int) (*models.Residence, error)
+	GetAllResidences(ctx context.Context) ([]*models.Residence, error)
 
-	// GetDiscipline(ctx context.Context, disciplineID int) (*models.Discipline, error)
-	// GetAllDisciplines(ctx context.Context) ([]*models.Discipline, error)
+	GetDiscipline(ctx context.Context, disciplineID int) (*models.Discipline, error)
+	GetAllDisciplines(ctx context.Context) ([]*models.Discipline, error)
 
 	GetControlEventType(ctx context.Context, controlEventTypeID int) (*models.ControlEventType, error)
 	GetAllControlEventTypes(ctx context.Context) ([]*models.ControlEventType, error)
