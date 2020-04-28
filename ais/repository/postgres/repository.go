@@ -4,12 +4,12 @@ import (
 	"database/sql"
 )
 
-type AisRepository struct {
+type DBAisRepository struct {
 	db *sql.DB
 }
 
-func NewAisRepository(db *sql.DB) *AisRepository {
-	return &AisRepository{
+func NewDBAisRepository(db *sql.DB) *DBAisRepository {
+	return &DBAisRepository{
 		db: db,
 	}
 }

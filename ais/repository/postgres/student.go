@@ -31,7 +31,7 @@ func toPostgresStudent(g *models.Student) *Student {
 	return nil
 }
 
-func toModelStudent(r AisRepository, ctx context.Context, g *Student) (*models.Student, error) {
+func toModelStudent(r DBAisRepository, ctx context.Context, g *Student) (*models.Student, error) {
 	residenceModel, err := r.GetResidence(ctx, g.ResidenceID)
 	if err != nil {
 		return nil, err
@@ -111,7 +111,7 @@ func (s *Student) hydrate(sc Scannable) error {
 	return sc.Scan(&s.ID, &s.GroupID, &s.ResidenceID, &s.Name, &s.SecondName, &s.ThirdName)
 }
 
-func (r AisRepository) GetStudent(ctx context.Context, studentID int) (*models.Student, error) {
+func (r DBAisRepository) GetStudent(ctx context.Context, studentID int) (*models.Student, error) {
 	row := r.db.QueryRowContext(ctx, getStudentQuery, studentID)
 	student := new(Student)
 	student, err := student.Fill(ctx, r.db, row)
@@ -132,7 +132,7 @@ const getAllStudentsQuery = `
 SELECT id, id_группы, id_места_жительства, имя, фамилия, отчество
 	FROM Студент`
 
-func (r AisRepository) GetAllStudents(ctx context.Context) ([]*models.Student, error) {
+func (r DBAisRepository) GetAllStudents(ctx context.Context) ([]*models.Student, error) {
 	rows, err := r.db.QueryContext(ctx, getAllStudentsQuery)
 	students := make([]*models.Student, 0)
 

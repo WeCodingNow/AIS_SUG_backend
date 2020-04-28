@@ -27,7 +27,7 @@ func toPostgresGroup(g *models.Group) *Group {
 	return nil
 }
 
-func toModelGroup(r AisRepository, ctx context.Context, g *Group, callerStudent *models.Student) (*models.Group, error) {
+func toModelGroup(r DBAisRepository, ctx context.Context, g *Group, callerStudent *models.Student) (*models.Group, error) {
 	semesterModels := make([]*models.Semester, 0, len(g.SemesterIDs))
 
 	for _, semesterID := range g.SemesterIDs {
@@ -108,7 +108,7 @@ func (g *Group) hydrate(sc Scannable) error {
 	return sc.Scan(&g.ID, &g.CathedraID, &g.Number)
 }
 
-func (r AisRepository) GetGroupRecursive(ctx context.Context, groupID int, caller *models.Student) (*models.Group, error) {
+func (r DBAisRepository) GetGroupRecursive(ctx context.Context, groupID int, caller *models.Student) (*models.Group, error) {
 	row := r.db.QueryRowContext(ctx, getGroupQuery, groupID)
 
 	group := new(Group)
@@ -126,7 +126,7 @@ func (r AisRepository) GetGroupRecursive(ctx context.Context, groupID int, calle
 
 	return groupModel, nil
 }
-func (r AisRepository) GetGroup(ctx context.Context, groupID int) (*models.Group, error) {
+func (r DBAisRepository) GetGroup(ctx context.Context, groupID int) (*models.Group, error) {
 	row := r.db.QueryRowContext(ctx, getGroupQuery, groupID)
 
 	group := new(Group)
@@ -147,7 +147,7 @@ func (r AisRepository) GetGroup(ctx context.Context, groupID int) (*models.Group
 
 const getAllGroupsQuery = `SELECT id, id_кафедры, номер FROM Группа`
 
-func (r AisRepository) GetAllGroups(ctx context.Context) ([]*models.Group, error) {
+func (r DBAisRepository) GetAllGroups(ctx context.Context) ([]*models.Group, error) {
 	rows, err := r.db.QueryContext(ctx, getAllGroupsQuery)
 	groups := make([]*models.Group, 0)
 

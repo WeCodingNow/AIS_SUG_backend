@@ -39,7 +39,7 @@ func toModelControlEventType(c *ControlEventType) *models.ControlEventType {
 
 const getControlEventTypeQuery = `SELECT * FROM ТипКонтрольногоМероприятия WHERE id = $1`
 
-func (r AisRepository) GetControlEventType(ctx context.Context, controlEventTypeID int) (*models.ControlEventType, error) {
+func (r DBAisRepository) GetControlEventType(ctx context.Context, controlEventTypeID int) (*models.ControlEventType, error) {
 	row := r.db.QueryRowContext(ctx, getControlEventTypeQuery, controlEventTypeID)
 
 	controlEventType := new(ControlEventType)
@@ -57,7 +57,7 @@ func (r AisRepository) GetControlEventType(ctx context.Context, controlEventType
 
 const getAllControlEventTypesQuery = `SELECT * FROM ТипКонтрольногоМероприятия`
 
-func (r AisRepository) GetAllControlEventTypes(ctx context.Context) ([]*models.ControlEventType, error) {
+func (r DBAisRepository) GetAllControlEventTypes(ctx context.Context) ([]*models.ControlEventType, error) {
 	rows, err := r.db.QueryContext(ctx, getAllControlEventTypesQuery)
 	controlEventTypes := make([]*models.ControlEventType, 0)
 

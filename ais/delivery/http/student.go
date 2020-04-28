@@ -20,6 +20,24 @@ type Student struct {
 	Contacts   []*Contact      `json:"contacts"`
 }
 
+type ShortStudent struct {
+	ID         int     `json:"id"`
+	GroupID    int     `json:"group_id"`
+	Name       string  `json:"name"`
+	SecondName string  `json:"second_name"`
+	ThirdName  *string `json:"third_name"`
+}
+
+func toJsonShortStudent(student *models.Student) *ShortStudent {
+	return &ShortStudent{
+		ID:         student.ID,
+		GroupID:    student.Group.ID,
+		Name:       student.Name,
+		SecondName: student.SecondName,
+		ThirdName:  student.ThirdName,
+	}
+}
+
 func toJsonStudent(student *models.Student) *Student {
 	contactJSONs := make([]*Contact, 0, len(student.Contacts))
 

@@ -8,6 +8,7 @@ var (
 	ErrSemesterNotFound         = errors.New("semester not found")
 	ErrGroupNotFound            = errors.New("group not found")
 	ErrStudentNotFound          = errors.New("student not found")
+	ErrMarkNotFound             = errors.New("mark not found")
 	ErrContactTypeNotFound      = errors.New("contact type not found")
 	ErrContactNotFound          = errors.New("contact not found")
 	ErrResidenceNotFound        = errors.New("residence not found")

@@ -99,7 +99,7 @@ func NewApp() *App {
 		viper.GetDuration("auth.token_ttl"),
 	)
 
-	aisRepo := aispostgres.NewAisRepository(db)
+	aisRepo := aispostgres.NewDBAisRepository(db)
 	aisUC := aisusecase.NewAisUseCase(aisRepo)
 
 	aisAuthUC := aisauthusecase.NewAisAuthUseCase(aisUC, authUC)

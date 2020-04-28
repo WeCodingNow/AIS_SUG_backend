@@ -26,7 +26,7 @@ func toPostgresResidence(c *models.Residence) *Residence {
 	}
 }
 
-func toModelResidence(r AisRepository, ctx context.Context, c *Residence) *models.Residence {
+func toModelResidence(r DBAisRepository, ctx context.Context, c *Residence) *models.Residence {
 	// student, err := r.GetStudent(ctx, c.StudentID)
 
 	// if err != nil {
@@ -53,7 +53,7 @@ func toModelResidence(r AisRepository, ctx context.Context, c *Residence) *model
 
 const getResidenceQuery = `SELECT id, адрес, город, общежитие FROM МестоЖительства WHERE id = $1`
 
-func (r AisRepository) GetResidence(ctx context.Context, residenceID int) (*models.Residence, error) {
+func (r DBAisRepository) GetResidence(ctx context.Context, residenceID int) (*models.Residence, error) {
 	row := r.db.QueryRowContext(ctx, getResidenceQuery, residenceID)
 
 	residence := new(Residence)
@@ -72,7 +72,7 @@ func (r AisRepository) GetResidence(ctx context.Context, residenceID int) (*mode
 
 const getAllResidencesQuery = `SELECT id, адрес, город, общежитие FROM МестоЖительства`
 
-func (r AisRepository) GetAllResidences(ctx context.Context) ([]*models.Residence, error) {
+func (r DBAisRepository) GetAllResidences(ctx context.Context) ([]*models.Residence, error) {
 	rows, err := r.db.QueryContext(ctx, getAllResidencesQuery)
 	residences := make([]*models.Residence, 0)
 

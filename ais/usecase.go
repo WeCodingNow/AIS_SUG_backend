@@ -39,6 +39,6 @@ type UseCase interface {
 	GetControlEvent(ctx context.Context, controlEventID int) (*models.ControlEvent, error)
 	GetAllControlEvents(ctx context.Context) ([]*models.ControlEvent, error)
 
-	// GetMark(ctx context.Context, markID int) (*models.Mark, error)
-	// GetAllMarks(ctx context.Context) ([]*models.Mark, error)
+	GetMark(ctx context.Context, markID int) (*models.Mark, error)
+	GetAllMarks(ctx context.Context) ([]*models.Mark, error)
 }

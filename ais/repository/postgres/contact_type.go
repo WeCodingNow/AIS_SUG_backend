@@ -46,7 +46,7 @@ func toModelContactType(c *ContactType) *models.ContactType {
 
 const getContactTypeQuery = `SELECT * FROM ТипКонтакта WHERE id = $1`
 
-func (r AisRepository) GetContactType(ctx context.Context, contactTypeID int) (*models.ContactType, error) {
+func (r DBAisRepository) GetContactType(ctx context.Context, contactTypeID int) (*models.ContactType, error) {
 	row := r.db.QueryRowContext(ctx, getContactTypeQuery, contactTypeID)
 
 	contactType := new(ContactType)
@@ -64,7 +64,7 @@ func (r AisRepository) GetContactType(ctx context.Context, contactTypeID int) (*
 
 const getAllContactTypesQuery = `SELECT * FROM ТипКонтакта`
 
-func (r AisRepository) GetAllContactTypes(ctx context.Context) ([]*models.ContactType, error) {
+func (r DBAisRepository) GetAllContactTypes(ctx context.Context) ([]*models.ContactType, error) {
 	rows, err := r.db.QueryContext(ctx, getAllContactTypesQuery)
 	contactTypes := make([]*models.ContactType, 0)
 

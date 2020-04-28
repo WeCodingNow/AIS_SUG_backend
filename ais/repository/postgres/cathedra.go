@@ -49,7 +49,7 @@ func toModelCathedra(c *Cathedra) *models.Cathedra {
 
 const getCathedraQuery = `SELECT * FROM Кафедра WHERE id = $1`
 
-func (r AisRepository) GetCathedra(ctx context.Context, cathedraID int) (*models.Cathedra, error) {
+func (r DBAisRepository) GetCathedra(ctx context.Context, cathedraID int) (*models.Cathedra, error) {
 	row := r.db.QueryRowContext(ctx, getCathedraQuery, cathedraID)
 
 	cathedra := new(Cathedra)
@@ -67,7 +67,7 @@ func (r AisRepository) GetCathedra(ctx context.Context, cathedraID int) (*models
 
 const getAllCathedrasQuery = `SELECT * FROM Кафедра`
 
-func (r AisRepository) GetAllCathedras(ctx context.Context) ([]*models.Cathedra, error) {
+func (r DBAisRepository) GetAllCathedras(ctx context.Context) ([]*models.Cathedra, error) {
 	rows, err := r.db.QueryContext(ctx, getAllCathedrasQuery)
 	cathedras := make([]*models.Cathedra, 0)
 

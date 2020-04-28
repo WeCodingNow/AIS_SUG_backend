@@ -38,7 +38,7 @@ func toPostgresContact(c *models.Contact) *Contact {
 	}
 }
 
-func toModelContact(r AisRepository, ctx context.Context, c *Contact) *models.Contact {
+func toModelContact(r DBAisRepository, ctx context.Context, c *Contact) *models.Contact {
 	contactType, err := r.GetContactType(ctx, c.ContactTypeID)
 
 	if err != nil {
@@ -71,7 +71,7 @@ func toModelContact(r AisRepository, ctx context.Context, c *Contact) *models.Co
 
 const getContactQuery = `SELECT id, id_типа_контакта, id_студента, значение FROM Контакт WHERE id = $1`
 
-func (r AisRepository) GetContact(ctx context.Context, contactID int) (*models.Contact, error) {
+func (r DBAisRepository) GetContact(ctx context.Context, contactID int) (*models.Contact, error) {
 	row := r.db.QueryRowContext(ctx, getContactQuery, contactID)
 
 	contact := new(Contact)
@@ -89,7 +89,7 @@ func (r AisRepository) GetContact(ctx context.Context, contactID int) (*models.C
 
 const getAllContactsQuery = `SELECT * FROM Контакт`
 
-func (r AisRepository) GetAllContacts(ctx context.Context) ([]*models.Contact, error) {
+func (r DBAisRepository) GetAllContacts(ctx context.Context) ([]*models.Contact, error) {
 	rows, err := r.db.QueryContext(ctx, getAllContactsQuery)
 	contacts := make([]*models.Contact, 0)
 

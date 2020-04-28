@@ -42,7 +42,7 @@ func toModelDiscipline(c *Discipline) *models.Discipline {
 
 const getDisciplineQuery = `SELECT id, название, часы FROM Дисциплина WHERE id = $1`
 
-func (r AisRepository) GetDiscipline(ctx context.Context, disciplineID int) (*models.Discipline, error) {
+func (r DBAisRepository) GetDiscipline(ctx context.Context, disciplineID int) (*models.Discipline, error) {
 	row := r.db.QueryRowContext(ctx, getDisciplineQuery, disciplineID)
 
 	discipline := new(Discipline)
@@ -60,7 +60,7 @@ func (r AisRepository) GetDiscipline(ctx context.Context, disciplineID int) (*mo
 
 const getAllDisciplinesQuery = `SELECT id, название, часы FROM Дисциплина`
 
-func (r AisRepository) GetAllDisciplines(ctx context.Context) ([]*models.Discipline, error) {
+func (r DBAisRepository) GetAllDisciplines(ctx context.Context) ([]*models.Discipline, error) {
 	rows, err := r.db.QueryContext(ctx, getAllDisciplinesQuery)
 	disciplines := make([]*models.Discipline, 0)
 

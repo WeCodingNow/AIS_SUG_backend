@@ -21,7 +21,7 @@ func toPostgresControlEvent(c *models.ControlEvent) *ControlEvent {
 	return nil
 }
 
-func toModelControlEvent(r AisRepository, ctx context.Context, c *ControlEvent) (*models.ControlEvent, error) {
+func toModelControlEvent(r DBAisRepository, ctx context.Context, c *ControlEvent) (*models.ControlEvent, error) {
 	controlEventType, err := r.GetControlEventType(ctx, c.ControlEventTypeID)
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func toModelControlEvent(r AisRepository, ctx context.Context, c *ControlEvent) 
 
 const getControlEventQuery = `SELECT id, id_типа, id_дисциплины, id_семестра, дата_проведения FROM КонтрольноеМероприятие WHERE id = $1`
 
-func (r AisRepository) GetControlEvent(ctx context.Context, controlEventID int) (*models.ControlEvent, error) {
+func (r DBAisRepository) GetControlEvent(ctx context.Context, controlEventID int) (*models.ControlEvent, error) {
 	row := r.db.QueryRowContext(ctx, getControlEventQuery, controlEventID)
 
 	controlEvent := new(ControlEvent)
@@ -65,7 +65,7 @@ func (r AisRepository) GetControlEvent(ctx context.Context, controlEventID int) 
 
 const getAllControlEventsQuery = `SELECT id, id_типа, id_дисциплины, id_семестра, дата_проведения FROM КонтрольноеМероприятие`
 
-func (r AisRepository) GetAllControlEvents(ctx context.Context) ([]*models.ControlEvent, error) {
+func (r DBAisRepository) GetAllControlEvents(ctx context.Context) ([]*models.ControlEvent, error) {
 	rows, err := r.db.QueryContext(ctx, getAllControlEventsQuery)
 	controlEvents := make([]*models.ControlEvent, 0)
 

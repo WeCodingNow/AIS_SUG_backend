@@ -53,7 +53,7 @@ func toModelSemester(c *Semester) *models.Semester {
 
 const createSemesterQuery = `INSERT INTO Семестр(номер, начало, конец) VALUES ( $1, $2, $3 )`
 
-func (r AisRepository) CreateSemester(ctx context.Context, number int, beginning time.Time, end *time.Time) error {
+func (r DBAisRepository) CreateSemester(ctx context.Context, number int, beginning time.Time, end *time.Time) error {
 	thirdArg := sql.NullTime{Time: time.Time{}, Valid: false}
 
 	if end != nil {
@@ -69,7 +69,7 @@ func (r AisRepository) CreateSemester(ctx context.Context, number int, beginning
 
 const getSemesterQuery = `SELECT * FROM Семестр WHERE id = $1`
 
-func (r AisRepository) GetSemester(ctx context.Context, semesterID int) (*models.Semester, error) {
+func (r DBAisRepository) GetSemester(ctx context.Context, semesterID int) (*models.Semester, error) {
 	row := r.db.QueryRowContext(ctx, getSemesterQuery, semesterID)
 
 	semester := new(Semester)
@@ -87,7 +87,7 @@ func (r AisRepository) GetSemester(ctx context.Context, semesterID int) (*models
 
 const getAllSemestersQuery = `SELECT * FROM Семестр`
 
-func (r AisRepository) GetAllSemesters(ctx context.Context) ([]*models.Semester, error) {
+func (r DBAisRepository) GetAllSemesters(ctx context.Context) ([]*models.Semester, error) {
 	rows, err := r.db.QueryContext(ctx, getAllSemestersQuery)
 	semesters := make([]*models.Semester, 0)
 

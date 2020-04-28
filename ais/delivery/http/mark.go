@@ -15,36 +15,36 @@ import (
 type Mark struct {
 	ID            int `json:"id"`
 	*ControlEvent `json:"control_event"`
-	// *ShortStudent `json:"student"`
-	Date  time.Time `json:"date"`
-	Value int       `json:"value"`
+	*ShortStudent `json:"student"`
+	Date          time.Time `json:"date"`
+	Value         int       `json:"value"`
 }
 
-// type ShortMark struct {
-// 	ID            int `json:"id"`
-// 	*ControlEvent `json:"control_event"`
-// 	Date          time.Time `json:"date"`
-// 	Value         int       `json:"value"`
-// }
+type ShortMark struct {
+	ID            int `json:"id"`
+	*ControlEvent `json:"control_event"`
+	Date          time.Time `json:"date"`
+	Value         int       `json:"value"`
+}
 
 func toJsonMark(mark *models.Mark) *Mark {
 	return &Mark{
 		ID:           mark.ID,
 		ControlEvent: toJsonControlEvent(mark.ControlEvent),
-		// ShortStudent: toJsonShortStudent(mark.Student),
-		Date:  mark.Date,
-		Value: mark.Value,
+		ShortStudent: toJsonShortStudent(mark.Student),
+		Date:         mark.Date,
+		Value:        mark.Value,
 	}
 }
 
-// func toJsonShortMark(mark *models.Mark) *ShortMark {
-// 	return &ShortMark{
-// 		ID:           mark.ID,
-// 		ControlEvent: toJsonControlEvent(mark.ControlEvent),
-// 		Date:         mark.Date,
-// 		Value:        mark.Value,
-// 	}
-// }
+func toJsonShortMark(mark *models.Mark) *ShortMark {
+	return &ShortMark{
+		ID:           mark.ID,
+		ControlEvent: toJsonControlEvent(mark.ControlEvent),
+		Date:         mark.Date,
+		Value:        mark.Value,
+	}
+}
 
 func (h *Handler) GetMark(c echo.Context) error {
 	markIDParam := c.Param("id")
