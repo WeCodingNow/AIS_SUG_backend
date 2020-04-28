@@ -4,5 +4,5 @@ type Contact struct {
 	ID int
 	*ContactType
 	*Student
-	def string
+	Def string
 }

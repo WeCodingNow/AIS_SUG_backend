@@ -2,8 +2,8 @@ package models
 
 type Residence struct {
 	ID        int
-	address   string
-	city      string
-	community bool
+	Address   string
+	City      string
+	Community bool
 	Students  []*Student
 }

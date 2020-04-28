@@ -1,4 +1,4 @@
-package models
+package postgres
 
 import "time"
 
@@ -7,5 +7,5 @@ type ControlEvent struct {
 	*ControlEventType
 	*Discipline
 	*Semester
-	Date time.Time
+	date time.Time
 }

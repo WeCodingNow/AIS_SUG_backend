@@ -24,12 +24,12 @@ func (ais AisUseCase) CreateSemester(ctx context.Context, number int, beginning 
 	return ais.aisRepo.CreateSemester(ctx, number, beginning, end)
 }
 
-func (ais AisUseCase) GetAllCathedras(ctx context.Context) ([]*models.Cathedra, error) {
-	return ais.aisRepo.GetAllCathedras(ctx)
-}
-
 func (ais AisUseCase) GetCathedra(ctx context.Context, cathedraID int) (*models.Cathedra, error) {
 	return ais.aisRepo.GetCathedra(ctx, cathedraID)
+}
+
+func (ais AisUseCase) GetAllCathedras(ctx context.Context) ([]*models.Cathedra, error) {
+	return ais.aisRepo.GetAllCathedras(ctx)
 }
 
 func (ais AisUseCase) GetSemester(ctx context.Context, semesterID int) (*models.Semester, error) {
@@ -38,4 +38,20 @@ func (ais AisUseCase) GetSemester(ctx context.Context, semesterID int) (*models.
 
 func (ais AisUseCase) GetAllSemesters(ctx context.Context) ([]*models.Semester, error) {
 	return ais.aisRepo.GetAllSemesters(ctx)
+}
+
+func (ais AisUseCase) GetContactType(ctx context.Context, contactTypeID int) (*models.ContactType, error) {
+	return ais.aisRepo.GetContactType(ctx, contactTypeID)
+}
+
+func (ais AisUseCase) GetAllContactTypes(ctx context.Context) ([]*models.ContactType, error) {
+	return ais.aisRepo.GetAllContactTypes(ctx)
+}
+
+func (ais AisUseCase) GetContact(ctx context.Context, contactID int) (*models.Contact, error) {
+	return ais.aisRepo.GetContact(ctx, contactID)
+}
+
+func (ais AisUseCase) GetAllContacts(ctx context.Context) ([]*models.Contact, error) {
+	return ais.aisRepo.GetAllContacts(ctx)
 }

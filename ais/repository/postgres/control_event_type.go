@@ -1,6 +1,6 @@
-package models
+package postgres
 
 type ControlEventType struct {
 	ID  int
-	Def string
+	def string
 }

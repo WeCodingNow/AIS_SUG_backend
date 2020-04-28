@@ -8,5 +8,5 @@ type Student struct {
 	SecondName string
 	ThirdName  *string
 	*Residence
-	contacts []*Contact
+	Contacts []*Contact
 }

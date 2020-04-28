@@ -2,6 +2,6 @@ package models
 
 type Discipline struct {
 	ID    int
-	name  string
-	hours int
+	Name  string
+	Hours int
 }

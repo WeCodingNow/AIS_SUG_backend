@@ -3,7 +3,7 @@ package models
 type Group struct {
 	ID        int
 	Cathedra  *Cathedra
-	number    int
+	Number    int
 	Semesters []*Semester
 	Students  []*Student
 }
