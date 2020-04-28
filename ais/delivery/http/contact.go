@@ -11,12 +11,10 @@ import (
 
 // type
 
-// TODO: добавить сюда студента
 type Contact struct {
 	ID          int    `json:"id"`
 	ContactType string `json:"type"`
 	Def         string `json:"def"`
-	Student     string `json:"student"`
 }
 
 func toJsonContact(contact *models.Contact) *Contact {
@@ -24,7 +22,6 @@ func toJsonContact(contact *models.Contact) *Contact {
 		ID:          contact.ID,
 		Def:         contact.Def,
 		ContactType: contact.ContactType.Def,
-		Student:     "placeholder",
 	}
 }
 

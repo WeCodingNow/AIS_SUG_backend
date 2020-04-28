@@ -20,6 +20,7 @@ func toJsonContactType(contactType *models.ContactType) *ContactType {
 		Def: contactType.Def,
 	}
 }
+
 func (h *Handler) GetContactType(c echo.Context) error {
 	contactTypeIDParam := c.Param("id")
 	contactTypeID, err := strconv.Atoi(contactTypeIDParam)

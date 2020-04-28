@@ -23,18 +23,14 @@ type AisRepository interface {
 	// CreateGroup(ctx context.Context, cathedraID int, number int) error
 	// UpdateGroup(ctx context.Context, group *models.Group) error
 	// // DeleteGroup(ctx context.Context, group *models.Group) error
-	// GetGroup(ctx context.Context, studentID int) (*models.Group, error)
+	GetGroup(ctx context.Context, studentID int) (*models.Group, error)
+	GetAllGroups(ctx context.Context) ([]*models.Group, error)
 
 	// CreateStudent(ctx context.Context, name, secondName string, thirdName *string, groupID int) error
 	// UpdateStudent(ctx context.Context, student *models.Student) error
 	// // DeleteStudent(ctx context.Context, student *models.Student) error
-	// GetStudent(ctx context.Context, studentID int) (*models.Student, error)
-
-	// GetAllGroups(ctx context.Context) ([]*models.Group, error)
-	// GetGroup(ctx context.Context, groupID int) (*models.Group, error)
-
-	// GetAllStudents(ctx context.Context) ([]*models.Student, error)
-	// GetStudent(ctx context.Context, studentID int) (*models.Student, error)
+	GetStudent(ctx context.Context, studentID int) (*models.Student, error)
+	GetAllStudents(ctx context.Context) ([]*models.Student, error)
 
 	GetContactType(ctx context.Context, contactTypeID int) (*models.ContactType, error)
 	GetAllContactTypes(ctx context.Context) ([]*models.ContactType, error)
@@ -51,8 +47,8 @@ type AisRepository interface {
 	GetControlEventType(ctx context.Context, controlEventTypeID int) (*models.ControlEventType, error)
 	GetAllControlEventTypes(ctx context.Context) ([]*models.ControlEventType, error)
 
-	// GetControlEvent(ctx context.Context, controlEventID int) (*models.ControlEvent, error)
-	// GetAllControlEvents(ctx context.Context) ([]*models.ControlEvent, error)
+	GetControlEvent(ctx context.Context, controlEventID int) (*models.ControlEvent, error)
+	GetAllControlEvents(ctx context.Context) ([]*models.ControlEvent, error)
 
 	// GetMark(ctx context.Context, markID int) (*models.Mark, error)
 	// GetAllMarks(ctx context.Context) ([]*models.Mark, error)

@@ -3,11 +3,28 @@ package http
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
 	"github.com/WeCodingNow/AIS_SUG_backend/models"
 	"github.com/labstack/echo"
 )
+
+type Semester struct {
+	ID        int        `json:"id"`
+	Number    int        `json:"number"`
+	Beginning time.Time  `json:"beginning"`
+	End       *time.Time `json:"end"`
+}
+
+func toJsonSemester(s *models.Semester) *Semester {
+	return &Semester{
+		s.ID,
+		s.Number,
+		s.Beginning,
+		s.End,
+	}
+}
 
 func (h *Handler) GetSemester(c echo.Context) error {
 	semesterIDParam := c.Param("id")

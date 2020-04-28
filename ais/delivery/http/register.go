@@ -14,6 +14,12 @@ func RegisterHTTPEndpoints(e *echo.Echo, ais ais.UseCase) {
 	e.GET("/semester", h.GetAllSemesters)
 	e.GET("/semester/:id", h.GetSemester)
 
+	e.GET("/group", h.GetAllGroups)
+	e.GET("/group/:id", h.GetGroup)
+
+	e.GET("/student", h.GetAllStudents)
+	e.GET("/student/:id", h.GetStudent)
+
 	e.GET("/discipline", h.GetAllDisciplines)
 	e.GET("/discipline/:id", h.GetDiscipline)
 
@@ -28,4 +34,7 @@ func RegisterHTTPEndpoints(e *echo.Echo, ais ais.UseCase) {
 
 	e.GET("/control_event_type", h.GetAllControlEventTypes)
 	e.GET("/control_event_type/:id", h.GetControlEventType)
+
+	e.GET("/control_event", h.GetAllControlEvents)
+	e.GET("/control_event/:id", h.GetControlEvent)
 }

@@ -4,9 +4,9 @@ package models
 type Student struct {
 	ID int
 	*Group
+	*Residence
+	Contacts   []*Contact
 	Name       string
 	SecondName string
 	ThirdName  *string
-	*Residence
-	Contacts []*Contact
 }

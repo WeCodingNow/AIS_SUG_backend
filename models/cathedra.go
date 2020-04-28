@@ -1,7 +1,7 @@
 package models
 
 type Cathedra struct {
-	ID        int    `json:"id"`
-	Name      string `json:"name"`
-	ShortName string `json:"short_name"`
+	ID        int
+	Name      string
+	ShortName string
 }

@@ -21,6 +21,13 @@ type Residence struct {
 	// Students  []*Student
 }
 
+type ShortResidence struct {
+	ID        int    `json:"id"`
+	Address   string `json:"address"`
+	City      string `json:"city"`
+	Community bool   `json:"community"`
+}
+
 func toJsonResidence(residence *models.Residence) *Residence {
 	return &Residence{
 		ID:        residence.ID,
@@ -28,6 +35,15 @@ func toJsonResidence(residence *models.Residence) *Residence {
 		City:      residence.City,
 		Community: residence.Community,
 		Students:  []string{"student1", "student2"},
+	}
+}
+
+func toJsonShortResidence(residence *models.Residence) *ShortResidence {
+	return &ShortResidence{
+		ID:        residence.ID,
+		Address:   residence.Address,
+		City:      residence.City,
+		Community: residence.Community,
 	}
 }
 

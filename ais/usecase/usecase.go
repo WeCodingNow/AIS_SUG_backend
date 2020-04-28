@@ -40,6 +40,22 @@ func (ais AisUseCase) GetAllSemesters(ctx context.Context) ([]*models.Semester, 
 	return ais.aisRepo.GetAllSemesters(ctx)
 }
 
+func (ais AisUseCase) GetGroup(ctx context.Context, groupID int) (*models.Group, error) {
+	return ais.aisRepo.GetGroup(ctx, groupID)
+}
+
+func (ais AisUseCase) GetAllGroups(ctx context.Context) ([]*models.Group, error) {
+	return ais.aisRepo.GetAllGroups(ctx)
+}
+
+func (ais AisUseCase) GetStudent(ctx context.Context, studentID int) (*models.Student, error) {
+	return ais.aisRepo.GetStudent(ctx, studentID)
+}
+
+func (ais AisUseCase) GetAllStudents(ctx context.Context) ([]*models.Student, error) {
+	return ais.aisRepo.GetAllStudents(ctx)
+}
+
 func (ais AisUseCase) GetContactType(ctx context.Context, contactTypeID int) (*models.ContactType, error) {
 	return ais.aisRepo.GetContactType(ctx, contactTypeID)
 }
@@ -70,6 +86,14 @@ func (ais AisUseCase) GetControlEventType(ctx context.Context, controlEventTypeI
 
 func (ais AisUseCase) GetAllControlEventTypes(ctx context.Context) ([]*models.ControlEventType, error) {
 	return ais.aisRepo.GetAllControlEventTypes(ctx)
+}
+
+func (ais AisUseCase) GetControlEvent(ctx context.Context, controlEventID int) (*models.ControlEvent, error) {
+	return ais.aisRepo.GetControlEvent(ctx, controlEventID)
+}
+
+func (ais AisUseCase) GetAllControlEvents(ctx context.Context) ([]*models.ControlEvent, error) {
+	return ais.aisRepo.GetAllControlEvents(ctx)
 }
 
 func (ais AisUseCase) GetDiscipline(ctx context.Context, controlEventTypeID int) (*models.Discipline, error) {

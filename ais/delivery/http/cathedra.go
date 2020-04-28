@@ -9,6 +9,20 @@ import (
 	"github.com/labstack/echo"
 )
 
+type Cathedra struct {
+	ID        int    `json:"id"`
+	Name      string `json:"name"`
+	ShortName string `json:"short_name"`
+}
+
+func toJsonCathedra(cathedra *models.Cathedra) *Cathedra {
+	return &Cathedra{
+		cathedra.ID,
+		cathedra.Name,
+		cathedra.ShortName,
+	}
+}
+
 func (h *Handler) GetCathedra(c echo.Context) error {
 	cathedraIDParam := c.Param("id")
 	cathedraID, err := strconv.Atoi(cathedraIDParam)
@@ -26,15 +40,20 @@ func (h *Handler) GetCathedra(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, cathedraModel)
+	return c.JSON(http.StatusOK, toJsonCathedra(cathedraModel))
 }
 
 type manyCathedrasOutput struct {
-	Cathedras []*models.Cathedra `json:"cathedras"`
+	Cathedras []*Cathedra `json:"cathedras"`
 }
 
 func (h *Handler) GetAllCathedras(c echo.Context) error {
-	cathedras, err := h.useCase.GetAllCathedras(c.Request().Context())
+	cathedraModels, err := h.useCase.GetAllCathedras(c.Request().Context())
+
+	cathedras := make([]*Cathedra, 0, len(cathedraModels))
+	for _, cathedraModel := range cathedraModels {
+		cathedras = append(cathedras, toJsonCathedra(cathedraModel))
+	}
 
 	if err != nil {
 		return err

@@ -15,11 +15,11 @@ type UseCase interface {
 	GetSemester(ctx context.Context, semesterID int) (*models.Semester, error)
 	GetAllSemesters(ctx context.Context) ([]*models.Semester, error)
 
-	// GetAllGroups(ctx context.Context) ([]*models.Group, error)
-	// GetGroup(ctx context.Context, groupID int) (*models.Group, error)
+	GetGroup(ctx context.Context, groupID int) (*models.Group, error)
+	GetAllGroups(ctx context.Context) ([]*models.Group, error)
 
-	// GetAllStudents(ctx context.Context) ([]*models.Student, error)
-	// GetStudent(ctx context.Context, studentID int) (*models.Student, error)
+	GetStudent(ctx context.Context, studentID int) (*models.Student, error)
+	GetAllStudents(ctx context.Context) ([]*models.Student, error)
 
 	GetContactType(ctx context.Context, contactTypeID int) (*models.ContactType, error)
 	GetAllContactTypes(ctx context.Context) ([]*models.ContactType, error)
@@ -36,8 +36,8 @@ type UseCase interface {
 	GetControlEventType(ctx context.Context, controlEventTypeID int) (*models.ControlEventType, error)
 	GetAllControlEventTypes(ctx context.Context) ([]*models.ControlEventType, error)
 
-	// GetControlEvent(ctx context.Context, controlEventID int) (*models.ControlEvent, error)
-	// GetAllControlEvents(ctx context.Context) ([]*models.ControlEvent, error)
+	GetControlEvent(ctx context.Context, controlEventID int) (*models.ControlEvent, error)
+	GetAllControlEvents(ctx context.Context) ([]*models.ControlEvent, error)
 
 	// GetMark(ctx context.Context, markID int) (*models.Mark, error)
 	// GetAllMarks(ctx context.Context) ([]*models.Mark, error)
