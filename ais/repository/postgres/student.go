@@ -122,9 +122,8 @@ func (s *Student) Associate(ctx context.Context, r DBAisRepository, contactRef *
 	return nil
 }
 
-func (r DBAisRepository) GetStudent(ctx context.Context, studentID int) (*models.Student, error) {
-	row := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE id = $1", studentFields, studentTable), studentID)
-	student, err := NewPostgresStudent(row)
+func makeStudentModel(ctx context.Context, r DBAisRepository, scannable postgres.Scannable) (*models.Student, error) {
+	student, err := NewPostgresStudent(scannable)
 
 	if err != nil {
 		return nil, err
@@ -138,7 +137,29 @@ func (r DBAisRepository) GetStudent(ctx context.Context, studentID int) (*models
 
 	return student.toModel(nil), nil
 }
+func (r DBAisRepository) GetStudent(ctx context.Context, studentID int) (*models.Student, error) {
+	row := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE id = $1", studentFields, studentTable), studentID)
+	return makeStudentModel(ctx, r, row)
+}
 
 func (r DBAisRepository) GetAllStudents(ctx context.Context) ([]*models.Student, error) {
-	return []*models.Student{}, nil
+	errValue := []*models.Student{}
+	rows, err := r.db.QueryContext(ctx, fmt.Sprintf("SELECT %s FROM %s", studentFields, studentTable))
+
+	if err != nil {
+		return errValue, err
+	}
+
+	students := []*models.Student{}
+	for rows.Next() {
+		student, err := makeStudentModel(ctx, r, rows)
+
+		if err != nil {
+			return errValue, nil
+		}
+
+		students = append(students, student)
+	}
+
+	return students, nil
 }
