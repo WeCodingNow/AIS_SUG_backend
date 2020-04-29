@@ -104,8 +104,8 @@ func (ais AisUseCase) GetAllDisciplines(ctx context.Context) ([]*models.Discipli
 	return ais.aisRepo.GetAllDisciplines(ctx)
 }
 
-func (ais AisUseCase) GetMark(ctx context.Context, controlEventTypeID int) (*models.Mark, error) {
-	return ais.aisRepo.GetMark(ctx, controlEventTypeID)
+func (ais AisUseCase) GetMark(ctx context.Context, markID int) (*models.Mark, error) {
+	return ais.aisRepo.GetMark(ctx, markID)
 }
 
 func (ais AisUseCase) GetAllMarks(ctx context.Context) ([]*models.Mark, error) {

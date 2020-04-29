@@ -15,8 +15,13 @@ type Group struct {
 	Cathedra *Cathedra  `json:"cathedra"`
 	Number   int        `json:"number"`
 	Students []*Student `json:"students"`
-	// Semesters []*Semester
 }
+
+// type ShortGroup struct {
+// 	ID       int       `json:"id"`
+// 	Cathedra *Cathedra `json:"cathedra"`
+// 	Number   int       `json:"number"`
+// }
 
 func toJsonGroup(group *models.Group) *Group {
 	studentJSONs := make([]*Student, 0, len(group.Students))
@@ -33,6 +38,14 @@ func toJsonGroup(group *models.Group) *Group {
 		Number:   group.Number,
 	}
 }
+
+// func toJsonShortGroup(group *models.Group) *ShortGroup {
+// 	return &ShortGroup{
+// 		ID:       group.ID,
+// 		Cathedra: toJsonCathedra(group.Cathedra),
+// 		Number:   group.Number,
+// 	}
+// }
 
 func (h *Handler) GetGroup(c echo.Context) error {
 	groupIDParam := c.Param("id")

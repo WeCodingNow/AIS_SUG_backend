@@ -20,6 +20,9 @@ func RegisterHTTPEndpoints(e *echo.Echo, ais ais.UseCase) {
 	e.GET("/student", h.GetAllStudents)
 	e.GET("/student/:id", h.GetStudent)
 
+	e.GET("/mark", h.GetAllMarks)
+	e.GET("/mark/:id", h.GetMark)
+
 	e.GET("/discipline", h.GetAllDisciplines)
 	e.GET("/discipline/:id", h.GetDiscipline)
 

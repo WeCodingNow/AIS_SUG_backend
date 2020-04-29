@@ -3,22 +3,26 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
 	"github.com/WeCodingNow/AIS_SUG_backend/models"
+	"github.com/WeCodingNow/AIS_SUG_backend/utils/delivery/postgres"
 )
 
+// CREATE TABLE ТипКонтакта(
+//     id SERIAL,
+//     обозначение varchar(100) NOT NULL,
+//     CONSTRAINT тип_контакта_pk PRIMARY KEY (id)
+// );
 type ContactType struct {
 	ID  int
 	Def string
 }
 
-// CREATE TABLE Кафедра(
-//     id SERIAL,
-//     название varchar(100) NOT NULL UNIQUE,
-//     короткое_название varchar(10) NOT NULL UNIQUE,
-//     CONSTRAINT кафедра_pk PRIMARY KEY (id)
-// );
+const contactTypeIDField = "id"
+const contactTypeFields = "id,обозначение"
+const contactTypeTable = "ТипКонтакта"
 
 func toPostgresContactType(c *models.ContactType) *ContactType {
 	return &ContactType{
@@ -27,57 +31,58 @@ func toPostgresContactType(c *models.ContactType) *ContactType {
 	}
 }
 
-func toModelContactType(c *ContactType) *models.ContactType {
+func (c *ContactType) toModel() *models.ContactType {
 	return &models.ContactType{
-		c.ID,
-		c.Def,
+		ID:  c.ID,
+		Def: c.Def,
 	}
 }
 
-// const createCathedraQuery = `INSERT INTO Кафедра(название, короткое_название) VALUES ( $1, $2 )`
+func NewPostgresContactType(scannable postgres.Scannable) (*ContactType, error) {
+	contactType := &ContactType{}
 
-// func (r AisRepository) CreateCathedra(ctx context.Context, name, shortName string) error {
-// 	_, err := r.db.ExecContext(ctx, createCathedraQuery,
-// 		name, shortName,
-// 	)
-
-// 	return err
-// }
-
-const getContactTypeQuery = `SELECT * FROM ТипКонтакта WHERE id = $1`
-
-func (r DBAisRepository) GetContactType(ctx context.Context, contactTypeID int) (*models.ContactType, error) {
-	row := r.db.QueryRowContext(ctx, getContactTypeQuery, contactTypeID)
-
-	contactType := new(ContactType)
-	err := row.Scan(&contactType.ID, &contactType.Def)
-
+	err := scannable.Scan(&contactType.ID, &contactType.Def)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ais.ErrContactTypeNotFound
+			err = ais.ErrContactTypeNotFound
 		}
 		return nil, err
 	}
 
-	return toModelContactType(contactType), nil
+	return contactType, nil
 }
 
-const getAllContactTypesQuery = `SELECT * FROM ТипКонтакта`
+// const getContactTypeQuery = `SELECT id, обозначение FROM ТипКонтакта WHERE id = $1`
 
-func (r DBAisRepository) GetAllContactTypes(ctx context.Context) ([]*models.ContactType, error) {
-	rows, err := r.db.QueryContext(ctx, getAllContactTypesQuery)
-	contactTypes := make([]*models.ContactType, 0)
+func (r DBAisRepository) GetContactType(ctx context.Context, contactTypeID int) (*models.ContactType, error) {
+	row := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE id = $1", contactTypeFields, contactTypeTable), contactTypeID)
+
+	contactType, err := NewPostgresContactType(row)
 
 	if err != nil {
-		return contactTypes, err
+		return nil, err
 	}
 
+	return contactType.toModel(), nil
+}
+
+// const getAllContactTypesQuery = `SELECT id, обозначение FROM ТипКонтакта`
+
+func (r DBAisRepository) GetAllContactTypes(ctx context.Context) ([]*models.ContactType, error) {
+	errValue := []*models.ContactType{}
+	rows, err := r.db.QueryContext(ctx, fmt.Sprintf("SELECT %s FROM %s", contactTypeFields, contactTypeTable))
+
+	if err != nil {
+		return errValue, err
+	}
+
+	contactTypes := make([]*models.ContactType, 0)
 	for rows.Next() {
-		contactType := new(ContactType)
-		if err := rows.Scan(&contactType.ID, &contactType.Def); err != nil {
-			return []*models.ContactType{}, err
+		contactType, err := NewPostgresContactType(rows)
+		if err != nil {
+			return errValue, err
 		}
-		contactTypes = append(contactTypes, toModelContactType(contactType))
+		contactTypes = append(contactTypes, contactType.toModel())
 	}
 
 	return contactTypes, nil

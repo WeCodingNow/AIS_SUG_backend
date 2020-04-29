@@ -2,10 +2,8 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
-	"github.com/WeCodingNow/AIS_SUG_backend/ais"
 	"github.com/WeCodingNow/AIS_SUG_backend/models"
 	"github.com/WeCodingNow/AIS_SUG_backend/utils/delivery/postgres"
 )
@@ -32,23 +30,7 @@ func toPostgresMark(c *models.Mark) *Mark {
 }
 
 func toModelMark(r DBAisRepository, ctx context.Context, m *Mark) (*models.Mark, error) {
-	controlEvent, err := r.GetControlEvent(ctx, m.ControlEventID)
-	if err != nil {
-		return nil, err
-	}
-
-	student, err := r.GetStudent(ctx, m.StudentID)
-	if err != nil {
-		return nil, err
-	}
-
-	return &models.Mark{
-		ID:           m.ID,
-		ControlEvent: controlEvent,
-		Student:      student,
-		Date:         m.Date,
-		Value:        m.Value,
-	}, nil
+	return nil, nil
 }
 
 const getMarkQuery = `SELECT id, id_контрольного_мероприятия, id_студента, дата_получения, значение FROM Оценка WHERE id = $1`
@@ -57,57 +39,19 @@ func (m *Mark) hydrate(sc postgres.Scannable) error {
 	return sc.Scan(&m.ID, &m.ControlEventID, &m.StudentID, &m.Date, &m.Value)
 }
 
-func (m *Mark) Fill(sc postgres.Scannable) error {
-	err := m.hydrate(sc)
-
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return ais.ErrMarkNotFound
-		}
-		return err
-	}
-
-	return nil
-}
-
 func (r DBAisRepository) GetMark(ctx context.Context, markID int) (*models.Mark, error) {
-	row := r.db.QueryRowContext(ctx, getMarkQuery, markID)
+	// row := r.db.QueryRowContext(ctx, getMarkQuery, markID)
 
-	mark := new(Mark)
-	err := mark.Fill(row)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return toModelMark(r, ctx, mark)
+	return nil, nil
 }
 
 const getAllMarksQuery = `SELECT id, id_контрольного_мероприятия, id_студента, дата_получения, значение FROM Оценка`
 
 func (r DBAisRepository) GetAllMarks(ctx context.Context) ([]*models.Mark, error) {
-	rows, err := r.db.QueryContext(ctx, getAllMarksQuery)
-	marks := make([]*models.Mark, 0)
+	errValue := []*models.Mark{}
 
-	if err != nil {
-		return marks, err
-	}
+	// rows, err := r.db.QueryContext(ctx, getAllMarksQuery)
+	// marks := make([]*models.Mark, 0)
 
-	for rows.Next() {
-		mark := new(Mark)
-		err := mark.Fill(rows)
-
-		if err != nil {
-			return []*models.Mark{}, nil
-		}
-
-		markModel, err := toModelMark(r, ctx, mark)
-		if err != nil {
-			return []*models.Mark{}, err
-		}
-
-		marks = append(marks, markModel)
-	}
-
-	return marks, nil
+	return errValue, nil
 }

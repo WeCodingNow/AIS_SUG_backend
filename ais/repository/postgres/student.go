@@ -3,9 +3,11 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
 	"github.com/WeCodingNow/AIS_SUG_backend/models"
+	"github.com/WeCodingNow/AIS_SUG_backend/utils/delivery/postgres"
 )
 
 // CREATE TABLE Студент(
@@ -18,138 +20,125 @@ import (
 // );
 
 type Student struct {
-	ID          int
-	GroupID     int
-	ResidenceID int
-	ContactIDs  []int
-	Name        string
-	SecondName  string
-	ThirdName   sql.NullString
+	ID         int
+	Name       string
+	SecondName string
+	ThirdName  sql.NullString
+
+	Contacts []*Contact
+	// Group *Group
+	// Residence *Residence
 }
 
-func toPostgresStudent(g *models.Student) *Student {
+const studentTable = "Студент"
+const studentIDField = "id"
+const studentFields = "id,имя,фамилия,отчество"
+const studentGroupFK = "id_группы"
+const studentResidenceFK = "id_места_жительства"
+
+func (s *Student) toModel(contactRef *models.Contact) *models.Student {
+	student := &models.Student{
+		ID:         s.ID,
+		Name:       s.Name,
+		SecondName: s.SecondName,
+	}
+
+	if s.ThirdName.Valid {
+		student.ThirdName = new(string)
+		*student.ThirdName = s.ThirdName.String
+	}
+
+	contacts := make([]*models.Contact, 0)
+
+	for _, contact := range s.Contacts {
+		if contactRef != nil {
+			if contact.ID == contactRef.ID {
+				contacts = append(contacts, contactRef)
+			} else {
+				contacts = append(contacts, contact.toModel(student))
+			}
+		} else {
+			contacts = append(contacts, contact.toModel(student))
+		}
+	}
+
+	student.Contacts = contacts
+
+	// Group: s.Group.toModel(),
+	// Residence: s.Residence.toModel(),
+	// Contacts:   contacts,
+
+	return student
+}
+
+func NewPostgresStudent(scannable postgres.Scannable) (*Student, error) {
+	student := &Student{}
+
+	err := scannable.Scan(&student.ID, &student.Name, &student.SecondName, &student.ThirdName)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			err = ais.ErrStudentNotFound
+		}
+		return nil, err
+	}
+
+	return student, nil
+}
+
+func (s *Student) Associate(ctx context.Context, r DBAisRepository, contactRef *Contact) error {
+	contactsRow, err := r.db.QueryContext(
+		ctx,
+		postgres.MakeJoinQuery(contactTable, contactFields, contactStudentFK, studentTable, studentIDField, studentIDField),
+		s.ID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	contacts := make([]*Contact, 0)
+	for contactsRow.Next() {
+		contact, err := NewPostgresContact(contactsRow)
+
+		if err != nil {
+			return err
+		}
+
+		if contactRef == nil {
+			contact.Associate(ctx, r, s)
+		} else {
+			if contactRef.ID == contact.ID {
+				contact = contactRef
+			} else {
+				contact.Associate(ctx, r, s)
+			}
+		}
+
+		contacts = append(contacts, contact)
+	}
+
+	s.Contacts = contacts
+
 	return nil
 }
 
-func toModelStudent(r DBAisRepository, ctx context.Context, g *Student) (*models.Student, error) {
-	residenceModel, err := r.GetResidence(ctx, g.ResidenceID)
-	if err != nil {
-		return nil, err
-	}
-
-	contactModels := make([]*models.Contact, 0, len(g.ContactIDs))
-
-	for _, contactID := range g.ContactIDs {
-		contact, err := r.GetContact(ctx, contactID)
-		if err != nil {
-			return nil, err
-		}
-
-		contactModels = append(contactModels, contact)
-	}
-
-	retStudent := &models.Student{
-		ID:         g.ID,
-		Group:      nil,
-		Residence:  residenceModel,
-		Contacts:   contactModels,
-		Name:       g.Name,
-		SecondName: g.SecondName,
-	}
-
-	if g.ThirdName.Valid {
-		retStudent.ThirdName = new(string)
-		*retStudent.ThirdName = g.ThirdName.String
-	}
-
-	retStudent.Group, err = r.GetGroupRecursive(ctx, g.GroupID, retStudent)
-	if err != nil {
-		return nil, err
-	}
-
-	return retStudent, nil
-}
-
-const getStudentQuery = `
-SELECT id, id_группы, id_места_жительства, имя, фамилия, отчество
-	FROM Студент
-	WHERE id = $1`
-
-const getContactIDsInStudentQuery = `
-SELECT к.id
-	FROM Студент as с
-	JOIN Контакт as к
-	ON с.id = к.id_студента
-	WHERE с.id = $1`
-
-func (s *Student) Fill(ctx context.Context, db *sql.DB, sc Scannable) (*Student, error) {
-	err := s.hydrate(sc)
-
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, ais.ErrStudentNotFound
-		}
-		return nil, err
-	}
-
-	idRows, err := db.QueryContext(ctx, getContactIDsInStudentQuery, s.ID)
-
-	if err != nil {
-		return nil, err
-	}
-
-	for idRows.Next() {
-		var contactID int
-		idRows.Scan(&contactID)
-		s.ContactIDs = append(s.ContactIDs, contactID)
-	}
-
-	return s, nil
-}
-
-func (s *Student) hydrate(sc Scannable) error {
-	return sc.Scan(&s.ID, &s.GroupID, &s.ResidenceID, &s.Name, &s.SecondName, &s.ThirdName)
-}
-
 func (r DBAisRepository) GetStudent(ctx context.Context, studentID int) (*models.Student, error) {
-	row := r.db.QueryRowContext(ctx, getStudentQuery, studentID)
-	student := new(Student)
-	student, err := student.Fill(ctx, r.db, row)
+	row := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE id = $1", studentFields, studentTable), studentID)
+	student, err := NewPostgresStudent(row)
 
 	if err != nil {
 		return nil, err
 	}
 
-	studentModel, err := toModelStudent(r, ctx, student)
+	err = student.Associate(ctx, r, nil)
+
 	if err != nil {
 		return nil, err
 	}
 
-	return studentModel, nil
+	return student.toModel(nil), nil
 }
-
-const getAllStudentsQuery = `
-SELECT id, id_группы, id_места_жительства, имя, фамилия, отчество
-	FROM Студент`
 
 func (r DBAisRepository) GetAllStudents(ctx context.Context) ([]*models.Student, error) {
-	rows, err := r.db.QueryContext(ctx, getAllStudentsQuery)
-	students := make([]*models.Student, 0)
-
-	if err != nil {
-		return students, err
-	}
-
-	for rows.Next() {
-		student := new(Student)
-		student.Fill(ctx, r.db, rows)
-
-		studentModel, err := toModelStudent(r, ctx, student)
-		if err != nil {
-			return []*models.Student{}, err
-		}
-		students = append(students, studentModel)
-	}
-
-	return students, nil
+	return []*models.Student{}, nil
 }

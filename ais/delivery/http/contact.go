@@ -12,9 +12,26 @@ import (
 // type
 
 type Contact struct {
-	ID          int    `json:"id"`
-	ContactType string `json:"type"`
-	Def         string `json:"def"`
+	ID          int              `json:"id"`
+	ContactType string           `json:"type"`
+	Def         string           `json:"def"`
+	Student     *FilteredStudent `json:"student"`
+}
+
+type FilteredStudent struct {
+	ID         int     `json:"id"`
+	Name       string  `json:"name"`
+	SecondName string  `json:"second_name"`
+	ThirdName  *string `json:"third_name"`
+}
+
+func filterStudent(student *models.Student) *FilteredStudent {
+	return &FilteredStudent{
+		student.ID,
+		student.Name,
+		student.SecondName,
+		student.ThirdName,
+	}
 }
 
 func toJsonContact(contact *models.Contact) *Contact {
@@ -22,6 +39,7 @@ func toJsonContact(contact *models.Contact) *Contact {
 		ID:          contact.ID,
 		Def:         contact.Def,
 		ContactType: contact.ContactType.Def,
+		Student:     filterStudent(contact.Student),
 	}
 }
 
@@ -34,6 +52,8 @@ func (h *Handler) GetContact(c echo.Context) error {
 	}
 
 	contactModel, err := h.useCase.GetContact(c.Request().Context(), contactID)
+
+	// log.Print(contactModel.Student)
 
 	if err != nil {
 		if err == ais.ErrContactNotFound {

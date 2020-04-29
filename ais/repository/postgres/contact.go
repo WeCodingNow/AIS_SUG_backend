@@ -3,106 +3,141 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
 	"github.com/WeCodingNow/AIS_SUG_backend/models"
+	"github.com/WeCodingNow/AIS_SUG_backend/utils/delivery/postgres"
 )
 
-type Contact struct {
-	ID            int
-	ContactTypeID int
-	StudentID     int
-	// *ContactType
-	// *Student
-	Def string
-}
-
-// CREATE TABLE Кафедра(
+// CREATE TABLE Контакт(
 //     id SERIAL,
-//     название varchar(100) NOT NULL UNIQUE,
-//     короткое_название varchar(10) NOT NULL UNIQUE,
-//     CONSTRAINT кафедра_pk PRIMARY KEY (id)
+//     id_типа_контакта int NOT NULL references ТипКонтакта(id) ON DELETE CASCADE,
+//     id_студента int NOT NULL references Студент(id) ON DELETE CASCADE,
+//     значение varchar(100) NOT NULL,
+//     CONSTRAINT контакт_pk PRIMARY KEY (id)
 // );
+type Contact struct {
+	ID  int
+	Def string
 
-func toPostgresContact(c *models.Contact) *Contact {
-	// contactType, err := r.GetContactType(ctx, c.ContactType.ID)
-	// c.ContactType.ID
-	return &Contact{
-		ID:            c.ID,
-		ContactTypeID: c.ContactType.ID,
-		StudentID:     c.Student.ID,
-		Def:           c.Def,
-		// toPostgresContactType(),
-		// c.
-		// c.Def,
-	}
+	*ContactType
+	*Student
 }
 
-func toModelContact(r DBAisRepository, ctx context.Context, c *Contact) *models.Contact {
-	contactType, err := r.GetContactType(ctx, c.ContactTypeID)
+const contactTable = "Контакт"
+const contactIDField = "id"
+const contactFields = "id,значение"
+const contactStudentFK = "id_студента"
+const contactContactTypeFK = "id_типа_контакта"
 
-	if err != nil {
-		panic(err)
-	}
-
-	// student, err := r.GetStudent(ctx, c.StudentID)
-
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	return &models.Contact{
+func (c *Contact) toModel(studentRef *models.Student) *models.Contact {
+	contact := &models.Contact{
 		ID:          c.ID,
-		ContactType: contactType,
-		// Student: student,
-		Def: c.Def,
+		Def:         c.Def,
+		ContactType: c.ContactType.toModel(),
+		Student:     studentRef,
 	}
+
+	if contact.Student == nil {
+		contact.Student = c.Student.toModel(contact)
+	}
+
+	return contact
 }
 
-// const createCathedraQuery = `INSERT INTO Кафедра(название, короткое_название) VALUES ( $1, $2 )`
+func NewPostgresContact(scannable postgres.Scannable) (*Contact, error) {
+	contact := &Contact{}
 
-// func (r AisRepository) CreateCathedra(ctx context.Context, name, shortName string) error {
-// 	_, err := r.db.ExecContext(ctx, createCathedraQuery,
-// 		name, shortName,
-// 	)
-
-// 	return err
-// }
-
-const getContactQuery = `SELECT id, id_типа_контакта, id_студента, значение FROM Контакт WHERE id = $1`
-
-func (r DBAisRepository) GetContact(ctx context.Context, contactID int) (*models.Contact, error) {
-	row := r.db.QueryRowContext(ctx, getContactQuery, contactID)
-
-	contact := new(Contact)
-	err := row.Scan(&contact.ID, &contact.ContactTypeID, &contact.StudentID, &contact.Def)
-
+	err := scannable.Scan(&contact.ID, &contact.Def)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ais.ErrContactNotFound
+			err = ais.ErrContactNotFound
 		}
 		return nil, err
 	}
 
-	return toModelContact(r, ctx, contact), nil
+	return contact, nil
 }
 
-const getAllContactsQuery = `SELECT * FROM Контакт`
+func (c *Contact) Associate(ctx context.Context, r DBAisRepository, studentRef *Student) error {
+	contactTypeRow := r.db.QueryRowContext(
+		ctx,
+		postgres.MakeJoinQuery(
+			contactTypeTable, contactTypeFields, contactTypeIDField,
+			contactTable, contactContactTypeFK, contactIDField),
+		c.ID,
+	)
 
-func (r DBAisRepository) GetAllContacts(ctx context.Context) ([]*models.Contact, error) {
-	rows, err := r.db.QueryContext(ctx, getAllContactsQuery)
-	contacts := make([]*models.Contact, 0)
+	contactType, err := NewPostgresContactType(contactTypeRow)
 
 	if err != nil {
-		return contacts, err
+		return err
 	}
 
-	for rows.Next() {
-		contact := new(Contact)
-		if err := rows.Scan(&contact.ID, &contact.ContactTypeID, &contact.StudentID, &contact.Def); err != nil {
-			return []*models.Contact{}, err
+	c.ContactType = contactType
+
+	studentRow := r.db.QueryRowContext(
+		ctx,
+		postgres.MakeJoinQuery(studentTable, studentFields, "id", contactTable, "id_студента", "id"),
+		c.ID,
+	)
+
+	if studentRef == nil {
+		student, err := NewPostgresStudent(studentRow)
+
+		if err != nil {
+			return err
 		}
-		contacts = append(contacts, toModelContact(r, ctx, contact))
+
+		student.Associate(ctx, r, c)
+		c.Student = student
+	} else {
+		c.Student = studentRef
+	}
+
+	return nil
+}
+
+func makeContactModel(ctx context.Context, r DBAisRepository, scannable postgres.Scannable) (*models.Contact, error) {
+	contact, err := NewPostgresContact(scannable)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = contact.Associate(ctx, r, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return contact.toModel(nil), nil
+}
+
+func (r DBAisRepository) GetContact(ctx context.Context, contactID int) (*models.Contact, error) {
+	row := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE id = $1", contactFields, contactTable), contactID)
+
+	return makeContactModel(ctx, r, row)
+}
+
+func (r DBAisRepository) GetAllContacts(ctx context.Context) ([]*models.Contact, error) {
+	errValue := []*models.Contact{}
+	rows, err := r.db.QueryContext(ctx, fmt.Sprintf("SELECT %s FROM %s", contactFields, contactTable))
+
+	if err != nil {
+		return errValue, err
+	}
+
+	contacts := []*models.Contact{}
+	for rows.Next() {
+		contact, err := makeContactModel(ctx, r, rows)
+
+		if err != nil {
+			return errValue, nil
+		}
+
+		contacts = append(contacts, contact)
 	}
 
 	return contacts, nil
