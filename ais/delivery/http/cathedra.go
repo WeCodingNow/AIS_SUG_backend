@@ -5,23 +5,9 @@ import (
 	"strconv"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
-	"github.com/WeCodingNow/AIS_SUG_backend/models"
+	"github.com/WeCodingNow/AIS_SUG_backend/ais/delivery/types"
 	"github.com/labstack/echo"
 )
-
-type Cathedra struct {
-	ID        int    `json:"id"`
-	Name      string `json:"name"`
-	ShortName string `json:"short_name"`
-}
-
-func toJsonCathedra(cathedra *models.Cathedra) *Cathedra {
-	return &Cathedra{
-		cathedra.ID,
-		cathedra.Name,
-		cathedra.ShortName,
-	}
-}
 
 func (h *Handler) GetCathedra(c echo.Context) error {
 	cathedraIDParam := c.Param("id")
@@ -31,7 +17,7 @@ func (h *Handler) GetCathedra(c echo.Context) error {
 		return err
 	}
 
-	cathedraModel, err := h.useCase.GetCathedra(c.Request().Context(), cathedraID)
+	cathedra, err := h.useCase.GetCathedra(c.Request().Context(), cathedraID)
 
 	if err != nil {
 		if err == ais.ErrCathedraNotFound {
@@ -40,24 +26,24 @@ func (h *Handler) GetCathedra(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, toJsonCathedra(cathedraModel))
+	return c.JSON(http.StatusOK, types.ToJsonCathedra(cathedra))
 }
 
 type manyCathedrasOutput struct {
-	Cathedras []*Cathedra `json:"cathedras"`
+	Cathedras []*types.JSONCathedra `json:"cathedras"`
 }
 
 func (h *Handler) GetAllCathedras(c echo.Context) error {
-	cathedraModels, err := h.useCase.GetAllCathedras(c.Request().Context())
+	cathedras, err := h.useCase.GetAllCathedras(c.Request().Context())
 
-	cathedras := make([]*Cathedra, 0, len(cathedraModels))
-	for _, cathedraModel := range cathedraModels {
-		cathedras = append(cathedras, toJsonCathedra(cathedraModel))
+	jsonCathedras := make([]*types.JSONCathedra, 0, len(cathedras))
+	for _, cathedra := range cathedras {
+		jsonCathedras = append(jsonCathedras, types.ToJsonCathedra(cathedra))
 	}
 
 	if err != nil {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, manyCathedrasOutput{Cathedras: cathedras})
+	return c.JSON(http.StatusOK, manyCathedrasOutput{Cathedras: jsonCathedras})
 }

@@ -11,7 +11,6 @@ type UseCase interface {
 	GetCathedra(ctx context.Context, cathedraID int) (*models.Cathedra, error)
 	GetAllCathedras(ctx context.Context) ([]*models.Cathedra, error)
 
-	// CreateSemester(ctx context.Context, number int, beginning time.Time, end *time.Time) error
 	GetSemester(ctx context.Context, semesterID int) (*models.Semester, error)
 	GetAllSemesters(ctx context.Context) ([]*models.Semester, error)
 

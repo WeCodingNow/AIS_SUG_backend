@@ -5,39 +5,9 @@ import (
 	"strconv"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
-	"github.com/WeCodingNow/AIS_SUG_backend/models"
+	"github.com/WeCodingNow/AIS_SUG_backend/ais/delivery/types"
 	"github.com/labstack/echo"
 )
-
-// type
-
-// TODO: добавить сюда студентов
-type Residence struct {
-	ID        int      `json:"id"`
-	Address   string   `json:"address"`
-	City      string   `json:"city"`
-	Community bool     `json:"community"`
-	Students  []string `json:"students"`
-}
-
-// type ResidenceFilter interface {
-// 	Filter(Residence)
-// }
-
-// func (r Residence) Filter() {
-
-// }
-
-// type FilteredStudent()
-func toJsonResidence(residence *models.Residence) *Residence {
-	return &Residence{
-		ID:        residence.ID,
-		Address:   residence.Address,
-		City:      residence.City,
-		Community: residence.Community,
-		Students:  []string{"student1", "student2"},
-	}
-}
 
 func (h *Handler) GetResidence(c echo.Context) error {
 	residenceIDParam := c.Param("id")
@@ -47,7 +17,7 @@ func (h *Handler) GetResidence(c echo.Context) error {
 		return err
 	}
 
-	residenceModel, err := h.useCase.GetResidence(c.Request().Context(), residenceID)
+	residence, err := h.useCase.GetResidence(c.Request().Context(), residenceID)
 
 	if err != nil {
 		if err == ais.ErrResidenceNotFound {
@@ -56,24 +26,24 @@ func (h *Handler) GetResidence(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, toJsonResidence(residenceModel))
+	return c.JSON(http.StatusOK, types.ToJsonResidence(residence))
 }
 
 type manyResidencesOutput struct {
-	Residences []*Residence `json:"residences"`
+	Residences []*types.JSONResidence `json:"residences"`
 }
 
 func (h *Handler) GetAllResidences(c echo.Context) error {
-	residenceModels, err := h.useCase.GetAllResidences(c.Request().Context())
+	residences, err := h.useCase.GetAllResidences(c.Request().Context())
 
 	if err != nil {
 		return err
 	}
 
-	residences := make([]*Residence, 0, len(residenceModels))
-	for _, residenceModel := range residenceModels {
-		residences = append(residences, toJsonResidence(residenceModel))
+	jsonResidences := make([]*types.JSONResidence, 0, len(residences))
+	for _, residence := range residences {
+		jsonResidences = append(jsonResidences, types.ToJsonResidence(residence))
 	}
 
-	return c.JSON(http.StatusOK, manyResidencesOutput{Residences: residences})
+	return c.JSON(http.StatusOK, manyResidencesOutput{Residences: jsonResidences})
 }

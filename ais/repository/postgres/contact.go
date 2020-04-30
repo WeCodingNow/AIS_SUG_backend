@@ -40,7 +40,7 @@ func (c *Contact) toModel(studentRef *models.Student) *models.Contact {
 	}
 
 	if contact.Student == nil {
-		contact.Student = c.Student.toModel(contact)
+		contact.Student = c.Student.toModel(contact, nil, nil, nil)
 	}
 
 	return contact
@@ -77,20 +77,20 @@ func (c *Contact) Associate(ctx context.Context, r DBAisRepository, studentRef *
 
 	c.ContactType = contactType
 
-	studentRow := r.db.QueryRowContext(
-		ctx,
-		postgres.MakeJoinQuery(studentTable, studentFields, "id", contactTable, "id_студента", "id"),
-		c.ID,
-	)
-
 	if studentRef == nil {
+		studentRow := r.db.QueryRowContext(
+			ctx,
+			postgres.MakeJoinQuery(studentTable, studentFields, "id", contactTable, "id_студента", "id"),
+			c.ID,
+		)
+
 		student, err := NewPostgresStudent(studentRow)
 
 		if err != nil {
 			return err
 		}
 
-		student.Associate(ctx, r, c)
+		student.Associate(ctx, r, c, nil, nil, nil)
 		c.Student = student
 	} else {
 		c.Student = studentRef

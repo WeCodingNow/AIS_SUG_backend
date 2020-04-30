@@ -3,32 +3,12 @@ package http
 import (
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
-	"github.com/WeCodingNow/AIS_SUG_backend/models"
+	"github.com/WeCodingNow/AIS_SUG_backend/ais/delivery/types"
 	"github.com/labstack/echo"
 )
 
-type ControlEvent struct {
-	ID                int `json:"id"`
-	*ControlEventType `json:"type"`
-	*Discipline       `json:"discipline"`
-	*Semester         `json:"semester"`
-	Date              time.Time `json:"date"`
-}
-
-func toJsonControlEvent(controlEvent *models.ControlEvent) *ControlEvent {
-	return &ControlEvent{
-		ID:               controlEvent.ID,
-		ControlEventType: toJsonControlEventType(controlEvent.ControlEventType),
-		Discipline:       toJsonDiscipline(controlEvent.Discipline),
-		Semester:         toJsonSemester(controlEvent.Semester),
-		Date:             controlEvent.Date,
-		// ID:  controlEventType.ID,
-		// Def: controlEventType.Def,
-	}
-}
 func (h *Handler) GetControlEvent(c echo.Context) error {
 	controlEventIDParam := c.Param("id")
 	controlEventID, err := strconv.Atoi(controlEventIDParam)
@@ -37,7 +17,7 @@ func (h *Handler) GetControlEvent(c echo.Context) error {
 		return err
 	}
 
-	controlEventModel, err := h.useCase.GetControlEvent(c.Request().Context(), controlEventID)
+	controlEvent, err := h.useCase.GetControlEvent(c.Request().Context(), controlEventID)
 
 	if err != nil {
 		if err == ais.ErrControlEventNotFound {
@@ -46,24 +26,24 @@ func (h *Handler) GetControlEvent(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, toJsonControlEvent(controlEventModel))
+	return c.JSON(http.StatusOK, types.ToJsonControlEvent(controlEvent))
 }
 
 type manyControlEventsOutput struct {
-	ControlEvents []*ControlEvent `json:"control_events"`
+	ControlEvents []*types.JSONControlEvent `json:"control_events"`
 }
 
 func (h *Handler) GetAllControlEvents(c echo.Context) error {
-	controlEventModels, err := h.useCase.GetAllControlEvents(c.Request().Context())
+	controlEvents, err := h.useCase.GetAllControlEvents(c.Request().Context())
 
 	if err != nil {
 		return err
 	}
 
-	controlEvents := make([]*ControlEvent, 0, len(controlEventModels))
-	for _, controlEventModel := range controlEventModels {
-		controlEvents = append(controlEvents, toJsonControlEvent(controlEventModel))
+	jsonControlEvents := make([]*types.JSONControlEvent, 0, len(controlEvents))
+	for _, controlEvent := range controlEvents {
+		jsonControlEvents = append(jsonControlEvents, types.ToJsonControlEvent(controlEvent))
 	}
 
-	return c.JSON(http.StatusOK, manyControlEventsOutput{ControlEvents: controlEvents})
+	return c.JSON(http.StatusOK, manyControlEventsOutput{ControlEvents: jsonControlEvents})
 }

@@ -3,77 +3,149 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
 	"github.com/WeCodingNow/AIS_SUG_backend/models"
+	"github.com/WeCodingNow/AIS_SUG_backend/utils/delivery/postgres"
 )
 
+// CREATE TABLE Дисциплина(
+//     id SERIAL,
+//     название varchar(150),
+//     часы int,
+//     CONSTRAINT дисциплина_pk PRIMARY KEY (id)
+// );
 type Discipline struct {
 	ID    int
 	Name  string
 	Hours int
+
+	ControlEvents []*ControlEvent
 }
 
-func toPostgresDiscipline(c *models.Discipline) *Discipline {
-	return &Discipline{
-		c.ID,
-		c.Name,
-		c.Hours,
+const disciplineIDField = "id"
+const disciplineFields = "id,название,часы"
+const disciplineTable = "Дисциплина"
+
+func (d *Discipline) toModel(controlEventRef *models.ControlEvent) *models.Discipline {
+	discipline := &models.Discipline{
+		ID:    d.ID,
+		Name:  d.Name,
+		Hours: d.Hours,
 	}
-}
 
-func toModelDiscipline(c *Discipline) *models.Discipline {
-	return &models.Discipline{
-		c.ID,
-		c.Name,
-		c.Hours,
+	controlEvents := make([]*models.ControlEvent, 0)
+
+	for _, controlEvent := range d.ControlEvents {
+		if controlEventRef != nil {
+			if controlEvent.ID == controlEventRef.ID {
+				controlEvents = append(controlEvents, controlEventRef)
+			} else {
+				controlEvents = append(controlEvents, controlEvent.toModel(discipline, nil, nil))
+			}
+		} else {
+			controlEvents = append(controlEvents, controlEvent.toModel(discipline, nil, nil))
+		}
 	}
+
+	discipline.ControlEvents = controlEvents
+
+	return discipline
 }
 
-// const createCathedraQuery = `INSERT INTO Кафедра(название, короткое_название) VALUES ( $1, $2 )`
+func NewPostgresDiscipline(scannable postgres.Scannable) (*Discipline, error) {
+	discipline := &Discipline{}
 
-// func (r AisRepository) CreateCathedra(ctx context.Context, name, shortName string) error {
-// 	_, err := r.db.ExecContext(ctx, createCathedraQuery,
-// 		name, shortName,
-// 	)
-
-// 	return err
-// }
-
-const getDisciplineQuery = `SELECT id, название, часы FROM Дисциплина WHERE id = $1`
-
-func (r DBAisRepository) GetDiscipline(ctx context.Context, disciplineID int) (*models.Discipline, error) {
-	row := r.db.QueryRowContext(ctx, getDisciplineQuery, disciplineID)
-
-	discipline := new(Discipline)
-	err := row.Scan(&discipline.ID, &discipline.Name, &discipline.Hours)
-
+	err := scannable.Scan(&discipline.ID, &discipline.Name, &discipline.Hours)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ais.ErrDisciplineNotFound
+			err = ais.ErrDisciplineNotFound
 		}
 		return nil, err
 	}
 
-	return toModelDiscipline(discipline), nil
+	return discipline, nil
 }
 
-const getAllDisciplinesQuery = `SELECT id, название, часы FROM Дисциплина`
-
-func (r DBAisRepository) GetAllDisciplines(ctx context.Context) ([]*models.Discipline, error) {
-	rows, err := r.db.QueryContext(ctx, getAllDisciplinesQuery)
-	disciplines := make([]*models.Discipline, 0)
+func (d *Discipline) Associate(ctx context.Context, r DBAisRepository, controlEventRef *ControlEvent) error {
+	controlEventsRows, err := r.db.QueryContext(
+		ctx,
+		postgres.MakeJoinQuery(
+			controlEventTable, controlEventFields, controlEventDisciplineFK,
+			disciplineTable, disciplineIDField, disciplineIDField,
+		),
+		d.ID,
+	)
 
 	if err != nil {
-		return disciplines, err
+		return err
 	}
 
-	for rows.Next() {
-		discipline := new(Discipline)
-		if err := rows.Scan(&discipline.ID, &discipline.Name, &discipline.Hours); err != nil {
-			return []*models.Discipline{}, err
+	controlEvents := make([]*ControlEvent, 0)
+	for controlEventsRows.Next() {
+		controlEvent, err := NewPostgresControlEvent(controlEventsRows)
+
+		if err != nil {
+			return err
 		}
-		disciplines = append(disciplines, toModelDiscipline(discipline))
+
+		if controlEventRef == nil {
+			controlEvent.Associate(ctx, r, d, nil, nil)
+		} else {
+			if controlEventRef.ID == controlEvent.ID {
+				controlEvent = controlEventRef
+			} else {
+				controlEvent.Associate(ctx, r, d, nil, nil)
+			}
+		}
+
+		controlEvents = append(controlEvents, controlEvent)
+	}
+
+	d.ControlEvents = controlEvents
+
+	return nil
+}
+
+func makeDisciplineModel(ctx context.Context, r DBAisRepository, scannable postgres.Scannable) (*models.Discipline, error) {
+	discipline, err := NewPostgresDiscipline(scannable)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = discipline.Associate(ctx, r, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return discipline.toModel(nil), nil
+}
+
+func (r DBAisRepository) GetDiscipline(ctx context.Context, disciplineID int) (*models.Discipline, error) {
+	row := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE id = $1", disciplineFields, disciplineTable), disciplineID)
+	return makeDisciplineModel(ctx, r, row)
+}
+
+func (r DBAisRepository) GetAllDisciplines(ctx context.Context) ([]*models.Discipline, error) {
+	errValue := []*models.Discipline{}
+	rows, err := r.db.QueryContext(ctx, fmt.Sprintf("SELECT %s FROM %s", disciplineFields, disciplineTable))
+
+	if err != nil {
+		return errValue, err
+	}
+
+	disciplines := make([]*models.Discipline, 0)
+	for rows.Next() {
+		discipline, err := makeDisciplineModel(ctx, r, rows)
+
+		if err != nil {
+			return errValue, err
+		}
+
+		disciplines = append(disciplines, discipline)
 	}
 
 	return disciplines, nil

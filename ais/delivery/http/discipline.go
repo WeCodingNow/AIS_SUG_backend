@@ -5,23 +5,9 @@ import (
 	"strconv"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
-	"github.com/WeCodingNow/AIS_SUG_backend/models"
+	"github.com/WeCodingNow/AIS_SUG_backend/ais/delivery/types"
 	"github.com/labstack/echo"
 )
-
-type Discipline struct {
-	ID    int    `json:"id"`
-	Name  string `json:"name"`
-	Hours int    `json:"hours"`
-}
-
-func toJsonDiscipline(discipline *models.Discipline) *Discipline {
-	return &Discipline{
-		discipline.ID,
-		discipline.Name,
-		discipline.Hours,
-	}
-}
 
 func (h *Handler) GetDiscipline(c echo.Context) error {
 	disciplineIDParam := c.Param("id")
@@ -31,7 +17,7 @@ func (h *Handler) GetDiscipline(c echo.Context) error {
 		return err
 	}
 
-	disciplineModel, err := h.useCase.GetDiscipline(c.Request().Context(), disciplineID)
+	discipline, err := h.useCase.GetDiscipline(c.Request().Context(), disciplineID)
 
 	if err != nil {
 		if err == ais.ErrDisciplineNotFound {
@@ -40,24 +26,24 @@ func (h *Handler) GetDiscipline(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, toJsonDiscipline(disciplineModel))
+	return c.JSON(http.StatusOK, types.ToJsonDiscipline(discipline))
 }
 
 type manyDisciplinesOutput struct {
-	Disciplines []*Discipline `json:"disciplines"`
+	Disciplines []*types.JSONDiscipline `json:"disciplines"`
 }
 
 func (h *Handler) GetAllDisciplines(c echo.Context) error {
-	disciplineModels, err := h.useCase.GetAllDisciplines(c.Request().Context())
+	disciplines, err := h.useCase.GetAllDisciplines(c.Request().Context())
 
 	if err != nil {
 		return err
 	}
 
-	disciplines := make([]*Discipline, 0, len(disciplineModels))
-	for _, disciplineModel := range disciplineModels {
-		disciplines = append(disciplines, toJsonDiscipline(disciplineModel))
+	jsonDisciplines := make([]*types.JSONDiscipline, 0, len(disciplines))
+	for _, discipline := range disciplines {
+		jsonDisciplines = append(jsonDisciplines, types.ToJsonDiscipline(discipline))
 	}
 
-	return c.JSON(http.StatusOK, manyDisciplinesOutput{Disciplines: disciplines})
+	return c.JSON(http.StatusOK, manyDisciplinesOutput{Disciplines: jsonDisciplines})
 }

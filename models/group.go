@@ -1,9 +1,10 @@
 package models
 
 type Group struct {
-	ID        int
+	ID     int
+	Number int
+
 	Cathedra  *Cathedra
-	Number    int
-	Semesters []*Semester
 	Students  []*Student
+	Semesters []*Semester
 }

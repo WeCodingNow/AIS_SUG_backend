@@ -3,74 +3,75 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
 	"github.com/WeCodingNow/AIS_SUG_backend/models"
+	"github.com/WeCodingNow/AIS_SUG_backend/utils/delivery/postgres"
 )
 
+// CREATE TABLE ТипКонтрольногоМероприятия(
+//     id SERIAL,
+//     обозначение varchar(50),
+//     CONSTRAINT тип_контрольного_мероприятие_pk PRIMARY KEY (id)
+// );
 type ControlEventType struct {
 	ID  int
 	Def string
 }
 
-func toPostgresControlEventType(c *models.ControlEventType) *ControlEventType {
-	return &ControlEventType{
-		c.ID,
-		c.Def,
-	}
-}
+const controlEventTypeIDField = "id"
+const controlEventTypeFields = "id,обозначение"
+const controlEventTypeTable = "ТипКонтрольногоМероприятия"
 
-func toModelControlEventType(c *ControlEventType) *models.ControlEventType {
+func (c *ControlEventType) toModel() *models.ControlEventType {
 	return &models.ControlEventType{
-		c.ID,
-		c.Def,
+		ID:  c.ID,
+		Def: c.Def,
 	}
 }
 
-// const createCathedraQuery = `INSERT INTO Кафедра(название, короткое_название) VALUES ( $1, $2 )`
+func NewPostgresControlEventType(scannable postgres.Scannable) (*ControlEventType, error) {
+	contactType := &ControlEventType{}
 
-// func (r AisRepository) CreateCathedra(ctx context.Context, name, shortName string) error {
-// 	_, err := r.db.ExecContext(ctx, createCathedraQuery,
-// 		name, shortName,
-// 	)
-
-// 	return err
-// }
-
-const getControlEventTypeQuery = `SELECT * FROM ТипКонтрольногоМероприятия WHERE id = $1`
-
-func (r DBAisRepository) GetControlEventType(ctx context.Context, controlEventTypeID int) (*models.ControlEventType, error) {
-	row := r.db.QueryRowContext(ctx, getControlEventTypeQuery, controlEventTypeID)
-
-	controlEventType := new(ControlEventType)
-	err := row.Scan(&controlEventType.ID, &controlEventType.Def)
-
+	err := scannable.Scan(&contactType.ID, &contactType.Def)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, ais.ErrControlEventTypeNotFound
+			err = ais.ErrControlEventTypeNotFound
 		}
 		return nil, err
 	}
 
-	return toModelControlEventType(controlEventType), nil
+	return contactType, nil
 }
 
-const getAllControlEventTypesQuery = `SELECT * FROM ТипКонтрольногоМероприятия`
+func (r DBAisRepository) GetControlEventType(ctx context.Context, controlEventTypeID int) (*models.ControlEventType, error) {
+	row := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE id = $1", controlEventTypeFields, controlEventTypeTable), controlEventTypeID)
 
-func (r DBAisRepository) GetAllControlEventTypes(ctx context.Context) ([]*models.ControlEventType, error) {
-	rows, err := r.db.QueryContext(ctx, getAllControlEventTypesQuery)
-	controlEventTypes := make([]*models.ControlEventType, 0)
+	contactType, err := NewPostgresControlEventType(row)
 
 	if err != nil {
-		return controlEventTypes, err
+		return nil, err
 	}
 
+	return contactType.toModel(), nil
+}
+
+func (r DBAisRepository) GetAllControlEventTypes(ctx context.Context) ([]*models.ControlEventType, error) {
+	errValue := []*models.ControlEventType{}
+	rows, err := r.db.QueryContext(ctx, fmt.Sprintf("SELECT %s FROM %s", controlEventTypeFields, controlEventTypeTable))
+
+	if err != nil {
+		return errValue, err
+	}
+
+	controlEventTypes := make([]*models.ControlEventType, 0)
 	for rows.Next() {
-		controlEventType := new(ControlEventType)
-		if err := rows.Scan(&controlEventType.ID, &controlEventType.Def); err != nil {
-			return []*models.ControlEventType{}, err
+		controlEventType, err := NewPostgresControlEventType(rows)
+		if err != nil {
+			return errValue, err
 		}
-		controlEventTypes = append(controlEventTypes, toModelControlEventType(controlEventType))
+		controlEventTypes = append(controlEventTypes, controlEventType.toModel())
 	}
 
 	return controlEventTypes, nil

@@ -7,4 +7,7 @@ type Semester struct {
 	Number    int        `json:"number"`
 	Beginning time.Time  `json:"beginning"`
 	End       *time.Time `json:"end"`
+
+	Groups []*Group
+	// ControlEvents []*ControlEvent
 }

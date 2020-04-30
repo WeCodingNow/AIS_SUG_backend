@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"time"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
 	"github.com/WeCodingNow/AIS_SUG_backend/models"
@@ -18,10 +17,6 @@ func NewAisUseCase(
 	return &AisUseCase{
 		aisRepo,
 	}
-}
-
-func (ais AisUseCase) CreateSemester(ctx context.Context, number int, beginning time.Time, end *time.Time) error {
-	return ais.aisRepo.CreateSemester(ctx, number, beginning, end)
 }
 
 func (ais AisUseCase) GetCathedra(ctx context.Context, cathedraID int) (*models.Cathedra, error) {

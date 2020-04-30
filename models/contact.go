@@ -1,8 +1,9 @@
 package models
 
 type Contact struct {
-	ID int
+	ID  int
+	Def string
+
 	*ContactType
 	*Student
-	Def string
 }

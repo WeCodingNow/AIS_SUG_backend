@@ -24,13 +24,6 @@ const contactTypeIDField = "id"
 const contactTypeFields = "id,обозначение"
 const contactTypeTable = "ТипКонтакта"
 
-func toPostgresContactType(c *models.ContactType) *ContactType {
-	return &ContactType{
-		c.ID,
-		c.Def,
-	}
-}
-
 func (c *ContactType) toModel() *models.ContactType {
 	return &models.ContactType{
 		ID:  c.ID,
@@ -52,8 +45,6 @@ func NewPostgresContactType(scannable postgres.Scannable) (*ContactType, error) 
 	return contactType, nil
 }
 
-// const getContactTypeQuery = `SELECT id, обозначение FROM ТипКонтакта WHERE id = $1`
-
 func (r DBAisRepository) GetContactType(ctx context.Context, contactTypeID int) (*models.ContactType, error) {
 	row := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE id = $1", contactTypeFields, contactTypeTable), contactTypeID)
 
@@ -65,8 +56,6 @@ func (r DBAisRepository) GetContactType(ctx context.Context, contactTypeID int) 
 
 	return contactType.toModel(), nil
 }
-
-// const getAllContactTypesQuery = `SELECT id, обозначение FROM ТипКонтакта`
 
 func (r DBAisRepository) GetAllContactTypes(ctx context.Context) ([]*models.ContactType, error) {
 	errValue := []*models.ContactType{}

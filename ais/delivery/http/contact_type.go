@@ -5,21 +5,10 @@ import (
 	"strconv"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
-	"github.com/WeCodingNow/AIS_SUG_backend/models"
+	"github.com/WeCodingNow/AIS_SUG_backend/ais/delivery/types"
+
 	"github.com/labstack/echo"
 )
-
-type ContactType struct {
-	ID  int    `json:"id"`
-	Def string `json:"def"`
-}
-
-func toJsonContactType(contactType *models.ContactType) *ContactType {
-	return &ContactType{
-		ID:  contactType.ID,
-		Def: contactType.Def,
-	}
-}
 
 func (h *Handler) GetContactType(c echo.Context) error {
 	contactTypeIDParam := c.Param("id")
@@ -29,7 +18,7 @@ func (h *Handler) GetContactType(c echo.Context) error {
 		return err
 	}
 
-	contactTypeModel, err := h.useCase.GetContactType(c.Request().Context(), contactTypeID)
+	contactType, err := h.useCase.GetContactType(c.Request().Context(), contactTypeID)
 
 	if err != nil {
 		if err == ais.ErrContactTypeNotFound {
@@ -38,24 +27,24 @@ func (h *Handler) GetContactType(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, contactTypeModel)
+	return c.JSON(http.StatusOK, types.ToJsonContactType(contactType))
 }
 
 type manyContactTypesOutput struct {
-	ContactTypes []*ContactType `json:"contact_types"`
+	ContactTypes []*types.JSONContactType `json:"contact_types"`
 }
 
 func (h *Handler) GetAllContactTypes(c echo.Context) error {
-	contactTypeModels, err := h.useCase.GetAllContactTypes(c.Request().Context())
+	contactTypes, err := h.useCase.GetAllContactTypes(c.Request().Context())
 
 	if err != nil {
 		return err
 	}
 
-	contactTypes := make([]*ContactType, 0, len(contactTypeModels))
-	for _, contactTypeModel := range contactTypeModels {
-		contactTypes = append(contactTypes, toJsonContactType(contactTypeModel))
+	jsonContactTypes := make([]*types.JSONContactType, 0, len(contactTypes))
+	for _, contactType := range contactTypes {
+		jsonContactTypes = append(jsonContactTypes, types.ToJsonContactType(contactType))
 	}
 
-	return c.JSON(http.StatusOK, manyContactTypesOutput{ContactTypes: contactTypes})
+	return c.JSON(http.StatusOK, manyContactTypesOutput{ContactTypes: jsonContactTypes})
 }

@@ -3,9 +3,10 @@ package models
 import "time"
 
 type Mark struct {
-	ID int
-	*ControlEvent
-	*Student
+	ID    int
 	Date  time.Time
 	Value int
+
+	*ControlEvent
+	*Student
 }
