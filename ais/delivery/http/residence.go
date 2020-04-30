@@ -26,11 +26,11 @@ func (h *Handler) GetResidence(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, types.ToJsonResidence(residence))
+	return c.JSON(http.StatusOK, types.ToResidenceJSONResidence(residence))
 }
 
 type manyResidencesOutput struct {
-	Residences []*types.JSONResidence `json:"residences"`
+	Residences []*types.ResidenceJSONResidence `json:"residences"`
 }
 
 func (h *Handler) GetAllResidences(c echo.Context) error {
@@ -40,9 +40,9 @@ func (h *Handler) GetAllResidences(c echo.Context) error {
 		return err
 	}
 
-	jsonResidences := make([]*types.JSONResidence, 0, len(residences))
+	jsonResidences := make([]*types.ResidenceJSONResidence, 0, len(residences))
 	for _, residence := range residences {
-		jsonResidences = append(jsonResidences, types.ToJsonResidence(residence))
+		jsonResidences = append(jsonResidences, types.ToResidenceJSONResidence(residence))
 	}
 
 	return c.JSON(http.StatusOK, manyResidencesOutput{Residences: jsonResidences})

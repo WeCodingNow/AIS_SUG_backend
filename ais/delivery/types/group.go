@@ -38,7 +38,7 @@ func toGroupJsonStudent(student *models.Student) *GroupJSONStudent {
 		JSONStudent: toJsonStudent(student),
 		Marks:       markJSONs,
 		Contacts:    contactJSONs,
-		Residence:   ToJsonResidence(student.Residence),
+		Residence:   toJsonResidence(student.Residence),
 	}
 }
 

@@ -80,6 +80,6 @@ func ToStudentJsonStudent(student *models.Student) *StudentJSONStudent {
 		Group:       toStudentJsonGroup(student.Group),
 		Marks:       markJSONs,
 		Contacts:    contactJSONs,
-		Residence:   ToJsonResidence(student.Residence),
+		Residence:   toJsonResidence(student.Residence),
 	}
 }
