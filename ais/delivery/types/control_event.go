@@ -7,19 +7,48 @@ import (
 )
 
 type JSONControlEvent struct {
-	ID   int       `json:"id"`
-	Date time.Time `json:"date"`
-	// *JSONControlEventType `json:"type"`
-	// *JSONDiscipline       `json:"discipline"`
-	// *Semester         `json:"semester"`
+	ID               int                   `json:"id"`
+	Date             time.Time             `json:"date"`
+	ControlEventType *JSONControlEventType `json:"type"`
 }
 
-func ToJsonControlEvent(controlEvent *models.ControlEvent) *JSONControlEvent {
+func toJsonControlEvent(controlEvent *models.ControlEvent) *JSONControlEvent {
 	return &JSONControlEvent{
-		ID:   controlEvent.ID,
-		Date: controlEvent.Date,
-		// ControlEventType: toJsonControlEventType(controlEvent.ControlEventType),
-		// Discipline:       toJsonDiscipline(controlEvent.Discipline),
-		// Semester:         toJsonSemester(controlEvent.Semester),
+		ID:               controlEvent.ID,
+		Date:             controlEvent.Date,
+		ControlEventType: ToJsonControlEventType(controlEvent.ControlEventType),
 	}
+}
+
+type ControlEventJSONMark struct {
+	*JSONMark
+	Student *MarkJSONStudent `json:"student"`
+}
+
+func toControlEventJsonMark(mark *models.Mark) *ControlEventJSONMark {
+	return &ControlEventJSONMark{
+		JSONMark: toJsonMark(mark),
+		Student:  toMarkJsonStudent(mark.Student),
+	}
+}
+
+type ControlEventJSONControlEvent struct {
+	*JSONControlEvent
+	Discipline *JSONDiscipline
+	Marks      []*ControlEventJSONMark
+}
+
+func ToControlEventJSONControlEvent(controlEvent *models.ControlEvent) *ControlEventJSONControlEvent {
+	markJSONs := make([]*ControlEventJSONMark, 0, len(controlEvent.Marks))
+
+	for _, mark := range controlEvent.Marks {
+		markJSONs = append(markJSONs, toControlEventJsonMark(mark))
+	}
+
+	return &ControlEventJSONControlEvent{
+		JSONControlEvent: toJsonControlEvent(controlEvent),
+		Discipline:       ToJsonDiscipline(controlEvent.Discipline),
+		Marks:            markJSONs,
+	}
+
 }

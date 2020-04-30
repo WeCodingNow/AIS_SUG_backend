@@ -26,11 +26,11 @@ func (h *Handler) GetControlEvent(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, types.ToJsonControlEvent(controlEvent))
+	return c.JSON(http.StatusOK, types.ToControlEventJSONControlEvent(controlEvent))
 }
 
 type manyControlEventsOutput struct {
-	ControlEvents []*types.JSONControlEvent `json:"control_events"`
+	ControlEvents []*types.ControlEventJSONControlEvent `json:"control_events"`
 }
 
 func (h *Handler) GetAllControlEvents(c echo.Context) error {
@@ -40,9 +40,9 @@ func (h *Handler) GetAllControlEvents(c echo.Context) error {
 		return err
 	}
 
-	jsonControlEvents := make([]*types.JSONControlEvent, 0, len(controlEvents))
+	jsonControlEvents := make([]*types.ControlEventJSONControlEvent, 0, len(controlEvents))
 	for _, controlEvent := range controlEvents {
-		jsonControlEvents = append(jsonControlEvents, types.ToJsonControlEvent(controlEvent))
+		jsonControlEvents = append(jsonControlEvents, types.ToControlEventJSONControlEvent(controlEvent))
 	}
 
 	return c.JSON(http.StatusOK, manyControlEventsOutput{ControlEvents: jsonControlEvents})

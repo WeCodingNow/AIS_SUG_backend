@@ -6,20 +6,48 @@ type JSONCathedra struct {
 	ID        int    `json:"id"`
 	Name      string `json:"name"`
 	ShortName string `json:"short_name"`
-	// Groups    []*CathedraShortGroup `json:"groups"`
 }
 
-func ToJsonCathedra(cathedra *models.Cathedra) *JSONCathedra {
-	// groupJSONs := make([]*CathedraShortGroup, 0, len(cathedra.Groups))
-
-	// for _, groupModel := range cathedra.Groups {
-	// 	groupJSONs = append(groupJSONs, toJsonShortGroup(groupModel))
-	// }
-
+func toJsonCathedra(cathedra *models.Cathedra) *JSONCathedra {
 	return &JSONCathedra{
 		ID:        cathedra.ID,
 		Name:      cathedra.Name,
 		ShortName: cathedra.ShortName,
-		// Groups:    groupJSONs,
+	}
+}
+
+type CathedraJSONGroup struct {
+	*JSONGroup
+	Students []*GroupJSONStudent `json:"students"`
+}
+
+func toCathedraJsonGroup(group *models.Group) *CathedraJSONGroup {
+	studentJSONs := make([]*GroupJSONStudent, 0, len(group.Students))
+
+	for _, studentModel := range group.Students {
+		studentJSONs = append(studentJSONs, toGroupJsonStudent(studentModel))
+	}
+
+	return &CathedraJSONGroup{
+		JSONGroup: toJsonGroup(group),
+		Students:  studentJSONs,
+	}
+}
+
+type CathedraJSONCathedra struct {
+	*JSONCathedra
+	Groups []*CathedraJSONGroup
+}
+
+func ToCathedraJSONCathedra(cathedra *models.Cathedra) *CathedraJSONCathedra {
+	groupJSONs := make([]*CathedraJSONGroup, 0, len(cathedra.Groups))
+
+	for _, group := range cathedra.Groups {
+		groupJSONs = append(groupJSONs, toCathedraJsonGroup(group))
+	}
+
+	return &CathedraJSONCathedra{
+		JSONCathedra: toJsonCathedra(cathedra),
+		Groups:       groupJSONs,
 	}
 }

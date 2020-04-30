@@ -26,19 +26,19 @@ func (h *Handler) GetCathedra(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, types.ToJsonCathedra(cathedra))
+	return c.JSON(http.StatusOK, types.ToCathedraJSONCathedra(cathedra))
 }
 
 type manyCathedrasOutput struct {
-	Cathedras []*types.JSONCathedra `json:"cathedras"`
+	Cathedras []*types.CathedraJSONCathedra `json:"cathedras"`
 }
 
 func (h *Handler) GetAllCathedras(c echo.Context) error {
 	cathedras, err := h.useCase.GetAllCathedras(c.Request().Context())
 
-	jsonCathedras := make([]*types.JSONCathedra, 0, len(cathedras))
+	jsonCathedras := make([]*types.CathedraJSONCathedra, 0, len(cathedras))
 	for _, cathedra := range cathedras {
-		jsonCathedras = append(jsonCathedras, types.ToJsonCathedra(cathedra))
+		jsonCathedras = append(jsonCathedras, types.ToCathedraJSONCathedra(cathedra))
 	}
 
 	if err != nil {

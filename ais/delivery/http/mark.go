@@ -26,11 +26,11 @@ func (h *Handler) GetMark(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, types.ToJsonMark(mark))
+	return c.JSON(http.StatusOK, types.ToMarkJsonMark(mark))
 }
 
 type manyMarksOutput struct {
-	Marks []*types.JSONMark `json:"marks"`
+	Marks []*types.MarkJSONMark `json:"marks"`
 }
 
 func (h *Handler) GetAllMarks(c echo.Context) error {
@@ -40,9 +40,9 @@ func (h *Handler) GetAllMarks(c echo.Context) error {
 		return err
 	}
 
-	marks := make([]*types.JSONMark, 0, len(markModels))
-	for _, contactModel := range markModels {
-		marks = append(marks, types.ToJsonMark(contactModel))
+	marks := make([]*types.MarkJSONMark, 0, len(markModels))
+	for _, mark := range markModels {
+		marks = append(marks, types.ToMarkJsonMark(mark))
 	}
 
 	return c.JSON(http.StatusOK, manyMarksOutput{Marks: marks})

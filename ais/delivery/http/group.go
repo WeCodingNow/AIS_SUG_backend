@@ -26,11 +26,11 @@ func (h *Handler) GetGroup(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, types.ToJsonGroup(group))
+	return c.JSON(http.StatusOK, types.ToGroupJsonGroup(group))
 }
 
 type manyGroupsOutput struct {
-	Groups []*types.JSONGroup `json:"groups"`
+	Groups []*types.GroupJSONGroup `json:"groups"`
 }
 
 func (h *Handler) GetAllGroups(c echo.Context) error {
@@ -40,9 +40,9 @@ func (h *Handler) GetAllGroups(c echo.Context) error {
 		return err
 	}
 
-	jsonGroups := make([]*types.JSONGroup, 0, len(groups))
+	jsonGroups := make([]*types.GroupJSONGroup, 0, len(groups))
 	for _, group := range groups {
-		jsonGroups = append(jsonGroups, types.ToJsonGroup(group))
+		jsonGroups = append(jsonGroups, types.ToGroupJsonGroup(group))
 	}
 
 	return c.JSON(http.StatusOK, manyGroupsOutput{Groups: jsonGroups})

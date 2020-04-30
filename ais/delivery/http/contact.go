@@ -28,11 +28,11 @@ func (h *Handler) GetContact(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, types.ToJsonContact(contact))
+	return c.JSON(http.StatusOK, types.ToContactJsonContact(contact))
 }
 
 type manyContactsOutput struct {
-	Contacts []*types.JSONContact `json:"contacts"`
+	Contacts []*types.ContactJSONContact `json:"contacts"`
 }
 
 func (h *Handler) GetAllContacts(c echo.Context) error {
@@ -42,9 +42,9 @@ func (h *Handler) GetAllContacts(c echo.Context) error {
 		return err
 	}
 
-	jsonContacts := make([]*types.JSONContact, 0, len(contacts))
+	jsonContacts := make([]*types.ContactJSONContact, 0, len(contacts))
 	for _, contact := range contacts {
-		jsonContacts = append(jsonContacts, types.ToJsonContact(contact))
+		jsonContacts = append(jsonContacts, types.ToContactJsonContact(contact))
 	}
 
 	return c.JSON(http.StatusOK, manyContactsOutput{Contacts: jsonContacts})

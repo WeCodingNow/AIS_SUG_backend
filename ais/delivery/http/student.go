@@ -26,11 +26,11 @@ func (h *Handler) GetStudent(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, types.ToJsonStudent(student))
+	return c.JSON(http.StatusOK, types.ToStudentJsonStudent(student))
 }
 
 type manyStudentsOutput struct {
-	Students []*types.JSONStudent `json:"students"`
+	Students []*types.StudentJSONStudent `json:"students"`
 }
 
 func (h *Handler) GetAllStudents(c echo.Context) error {
@@ -40,9 +40,9 @@ func (h *Handler) GetAllStudents(c echo.Context) error {
 		return err
 	}
 
-	jsonStudents := make([]*types.JSONStudent, 0, len(students))
+	jsonStudents := make([]*types.StudentJSONStudent, 0, len(students))
 	for _, student := range students {
-		jsonStudents = append(jsonStudents, types.ToJsonStudent(student))
+		jsonStudents = append(jsonStudents, types.ToStudentJsonStudent(student))
 	}
 
 	return c.JSON(http.StatusOK, manyStudentsOutput{Students: jsonStudents})

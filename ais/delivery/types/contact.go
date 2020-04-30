@@ -6,7 +6,14 @@ type JSONContact struct {
 	ID          int              `json:"id"`
 	Def         string           `json:"def"`
 	ContactType *JSONContactType `json:"type"`
-	// Student     *FilteredStudent `json:"student"`
+}
+
+func toJsonContact(contact *models.Contact) *JSONContact {
+	return &JSONContact{
+		ID:          contact.ID,
+		Def:         contact.Def,
+		ContactType: ToJsonContactType(contact.ContactType),
+	}
 }
 
 type ContactJSONContact struct {
@@ -14,17 +21,9 @@ type ContactJSONContact struct {
 	Student *JSONStudent `json:"student"`
 }
 
-func ToJsonContact(contact *models.Contact) *JSONContact {
-	return &JSONContact{
-		ID:          contact.ID,
-		Def:         contact.Def,
-		ContactType: ToJsonContactType(contact.ContactType),
-		// Student:     filterStudent(contact.Student),
-	}
-}
-
 func ToContactJsonContact(contact *models.Contact) *ContactJSONContact {
 	return &ContactJSONContact{
-		JSONContact: ToJsonContact(contact),
+		JSONContact: toJsonContact(contact),
+		Student:     toJsonStudent(contact.Student),
 	}
 }

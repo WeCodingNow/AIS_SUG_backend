@@ -24,8 +24,8 @@ type Semester struct {
 	Beginning sql.NullTime
 	End       sql.NullTime
 
-	Groups        []*Group
-	ControlEvents []*ControlEvent
+	Groups []*Group
+	// ControlEvents []*ControlEvent
 }
 
 const semesterIDField = "id"
@@ -97,40 +97,40 @@ func (s *Semester) Associate(
 	ctx context.Context, r DBAisRepository,
 	controlEventRef *ControlEvent, groupRef *Group,
 ) error {
-	controlEventsRows, err := r.db.QueryContext(
-		ctx,
-		postgres.MakeJoinQuery(
-			controlEventTable, controlEventFields, controlEventSemesterFK,
-			semesterTable, semesterIDField, semesterIDField,
-		),
-		s.ID,
-	)
+	// controlEventsRows, err := r.db.QueryContext(
+	// 	ctx,
+	// 	postgres.MakeJoinQuery(
+	// 		controlEventTable, controlEventFields, controlEventSemesterFK,
+	// 		semesterTable, semesterIDField, semesterIDField,
+	// 	),
+	// 	s.ID,
+	// )
 
-	if err != nil {
-		return err
-	}
+	// if err != nil {
+	// 	return err
+	// }
 
-	controlEvents := make([]*ControlEvent, 0)
-	for controlEventsRows.Next() {
-		controlEvent, err := NewPostgresControlEvent(controlEventsRows)
+	// controlEvents := make([]*ControlEvent, 0)
+	// for controlEventsRows.Next() {
+	// 	controlEvent, err := NewPostgresControlEvent(controlEventsRows)
 
-		if err != nil {
-			return err
-		}
+	// 	if err != nil {
+	// 		return err
+	// 	}
 
-		if controlEventRef == nil {
-			controlEvent.Associate(ctx, r, nil, s, nil)
-		} else {
-			if controlEventRef.ID == controlEvent.ID {
-				controlEvent = controlEventRef
-			} else {
-				controlEvent.Associate(ctx, r, nil, s, nil)
-			}
-		}
+	// 	if controlEventRef == nil {
+	// 		controlEvent.Associate(ctx, r, nil, s, nil)
+	// 	} else {
+	// 		if controlEventRef.ID == controlEvent.ID {
+	// 			controlEvent = controlEventRef
+	// 		} else {
+	// 			controlEvent.Associate(ctx, r, nil, s, nil)
+	// 		}
+	// 	}
 
-		controlEvents = append(controlEvents, controlEvent)
-	}
-	s.ControlEvents = controlEvents
+	// 	controlEvents = append(controlEvents, controlEvent)
+	// }
+	// s.ControlEvents = controlEvents
 
 	groupRows, err := r.db.QueryContext(
 		ctx,
