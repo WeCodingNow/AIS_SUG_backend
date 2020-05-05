@@ -164,3 +164,21 @@ func (r *DBAisRepository) GetAllStudents(ctx context.Context) ([]*models.Student
 
 	return students, nil
 }
+
+// const insertQuery
+
+func (r *DBAisRepository) CreateStudent(ctx context.Context, name, secondName string, thirdName *string, groupID int) (*models.Student, error) {
+	row := r.db.QueryRowContext(ctx,
+		`INSERT INTO Студент(имя,фамилия,отчество,id_группы) VALUES ( $1, $2, $3, $4) RETURNING id`,
+		name, secondName, thirdName, groupID,
+	)
+
+	var newID int
+	err := row.Scan(&newID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return r.GetStudent(ctx, newID)
+}

@@ -10,8 +10,9 @@ import (
 	"time"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/internal/api/ais"
-	"github.com/WeCodingNow/AIS_SUG_backend/internal/api/ais_auth"
+	"github.com/WeCodingNow/AIS_SUG_backend/internal/api/aisauth"
 	"github.com/WeCodingNow/AIS_SUG_backend/internal/api/auth"
+	"github.com/WeCodingNow/AIS_SUG_backend/internal/api/models"
 
 	authhttp "github.com/WeCodingNow/AIS_SUG_backend/internal/api/auth/delivery/http"
 	authpostgres "github.com/WeCodingNow/AIS_SUG_backend/internal/api/auth/repository/postgres"
@@ -21,7 +22,9 @@ import (
 	aispostgres "github.com/WeCodingNow/AIS_SUG_backend/internal/api/ais/repository/postgres"
 	aisusecase "github.com/WeCodingNow/AIS_SUG_backend/internal/api/ais/usecase"
 
-	aisauthusecase "github.com/WeCodingNow/AIS_SUG_backend/internal/api/ais_auth/usecase"
+	aisauthhttp "github.com/WeCodingNow/AIS_SUG_backend/internal/api/aisauth/delivery/http"
+	aisauthpostgres "github.com/WeCodingNow/AIS_SUG_backend/internal/api/aisauth/repository/postgres"
+	aisauthusecase "github.com/WeCodingNow/AIS_SUG_backend/internal/api/aisauth/usecase"
 
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -37,7 +40,7 @@ type App struct {
 
 	authUC    auth.UseCase
 	aisUC     ais.UseCase
-	aisAuthUC ais_auth.UseCase
+	aisAuthUC aisauth.UseCase
 }
 
 const (
@@ -62,6 +65,7 @@ func (a *App) Run() error {
 	)
 	authhttp.RegisterHTTPEndpoints(e, a.authUC)
 	aishttp.RegisterHTTPEndpoints(e, a.aisUC)
+	aisauthhttp.RegisterHTTPEndpoints(e, a.authUC, a.aisAuthUC)
 
 	addr := fmt.Sprintf("%s:%d", viper.GetString("server.host"), viper.GetInt("server.port"))
 	e.Server = &http.Server{
@@ -93,26 +97,52 @@ func (a *App) Run() error {
 const AdminPWD = "admin"
 const AdminUNAME = "admin"
 
-func createAdmin(auc auth.UseCase) {
+func (a *App) createAdmin() {
 	ctx := context.Background()
 
-	_, err := auc.SignIn(ctx, AdminPWD, AdminUNAME)
+	_, err := a.authUC.SignIn(ctx, AdminPWD, AdminUNAME)
 	if err != nil {
 		log.Print(err)
 		log.Print("trying to create user")
 
-		_, err = auc.CreateUser(ctx, AdminPWD, AdminUNAME)
+		err = a.aisAuthUC.CreateStudentWithCreds(ctx,
+			&models.User{Password: AdminPWD, Username: AdminUNAME},
+			&models.Role{ID: 1},
+			nil,
+		)
+
 		if err != nil {
 			log.Print(err)
-		} else {
-			log.Print("succesfully created admin user")
 		}
 	}
+}
 
+const StudentUNAME = "aleshka2012@gmail.com"
+const StudentPWD = "12345678"
+
+func (a *App) createStudent() {
+	ctx := context.Background()
+
+	_, err := a.authUC.SignIn(ctx, StudentUNAME, StudentPWD)
+	if err != nil {
+		log.Print(err)
+		log.Print("trying to create user")
+
+		err = a.aisAuthUC.CreateStudentWithCreds(ctx,
+			&models.User{Username: StudentUNAME, Password: StudentPWD},
+			&models.Role{ID: 3},
+			&models.Student{ID: 1},
+		)
+
+		if err != nil {
+			log.Print(err)
+		}
+	}
 }
 
 func (a *App) Init() {
-	createAdmin(a.authUC)
+	a.createAdmin()
+	a.createStudent()
 }
 
 func NewApp() *App {
@@ -129,7 +159,8 @@ func NewApp() *App {
 	aisRepo := aispostgres.NewDBAisRepository(db)
 	aisUC := aisusecase.NewAisUseCase(aisRepo)
 
-	aisAuthUC := aisauthusecase.NewAisAuthUseCase(aisUC, authUC)
+	aisAuthRepo := aisauthpostgres.NewAisAuthUserRepository(db)
+	aisAuthUC := aisauthusecase.NewAisAuthUseCase(aisAuthRepo, aisUC, authUC)
 
 	app := &App{
 		authUC:    authUC,

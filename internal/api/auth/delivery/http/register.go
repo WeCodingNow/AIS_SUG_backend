@@ -12,5 +12,5 @@ func RegisterHTTPEndpoints(e *echo.Echo, uc auth.UseCase) {
 	// e.POST("/create_student", h.CreateStudent)
 	// e.POST("/create_headman", h.CreateHeadman)
 	e.POST("/sign-in", h.SignIn)
-	e.POST("/check-token", h.CheckToken, makeAuthMiddleware(uc))
+	e.POST("/check-token", h.CheckToken, MakeAuthMiddleware(uc))
 }

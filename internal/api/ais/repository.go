@@ -25,7 +25,7 @@ type AisRepository interface {
 	GetGroup(ctx context.Context, studentID int) (*models.Group, error)
 	GetAllGroups(ctx context.Context) ([]*models.Group, error)
 
-	// CreateStudent(ctx context.Context, name, secondName string, thirdName *string, groupID int) error
+	CreateStudent(ctx context.Context, name, secondName string, thirdName *string, groupID int) (*models.Student, error)
 	// UpdateStudent(ctx context.Context, student *models.Student) error
 	// DeleteStudent(ctx context.Context, student *models.Student) error
 	GetStudent(ctx context.Context, studentID int) (*models.Student, error)

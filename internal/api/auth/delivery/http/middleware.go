@@ -10,10 +10,11 @@ import (
 )
 
 const ContextUserToken = "user-token"
+const ContextUserID = "user-id"
 
 // const ContextUserID = "user-id"
 
-func makeAuthMiddleware(a auth.UseCase) func(echo.HandlerFunc) echo.HandlerFunc {
+func MakeAuthMiddleware(a auth.UseCase) func(echo.HandlerFunc) echo.HandlerFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			authHeader := c.Request().Header.Get(echo.HeaderAuthorization)
@@ -34,10 +35,10 @@ func makeAuthMiddleware(a auth.UseCase) func(echo.HandlerFunc) echo.HandlerFunc 
 			}
 
 			token := headerParts[1]
-			_, err := a.ParseToken(c.Request().Context(), token)
+			user, err := a.ParseToken(c.Request().Context(), token)
 
 			c.Set(ContextUserToken, token)
-			// c.Set(ContextUserID, user.ID)
+			c.Set(ContextUserID, user.ID)
 
 			if err != nil {
 				log.Print("another error: ", err.Error())

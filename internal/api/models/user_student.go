@@ -1,8 +1,8 @@
 package models
 
 // binding between user model and student
-type UserStudent struct {
-	ID int
-	User
-	Student
+type UserStudentBinding struct {
+	ID      int
+	User    *User
+	Student *Student
 }
