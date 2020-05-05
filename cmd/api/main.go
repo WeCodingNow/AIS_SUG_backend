@@ -8,7 +8,6 @@ import (
 
 func main() {
 	app := server.NewApp()
-	app.Init()
 
 	if err := app.Run(); err != nil {
 		log.Fatalf("%s", err.Error())

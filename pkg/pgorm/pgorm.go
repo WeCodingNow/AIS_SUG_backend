@@ -79,6 +79,44 @@ type RepoModelFiller struct {
 	depsTable DepTable
 }
 
+// type Filter = map[string]interface{}
+type FilteredFields = []string
+
+func makeFilterString(f FilteredFields) string {
+	str := "WHERE "
+
+	for i, v := range f {
+		str += fmt.Sprintf("%s = $%d", v, i+1)
+		if i < len(f)-1 {
+			str += " AND "
+		}
+	}
+
+	return str
+}
+
+func MakeFillerWithFilter(
+	ctx context.Context, db *sql.DB,
+	fields, table string, filter FilteredFields,
+	values ...interface{},
+) (*RepoModelFiller, error) {
+	query := fmt.Sprintf("SELECT %s FROM %s %s", fields, table, makeFilterString(filter))
+	log.Print(query)
+
+	rows, err := db.QueryContext(ctx, query, values...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &RepoModelFiller{
+		db:        db,
+		rows:      rows,
+		ctx:       ctx,
+		depsTable: make(DepTable),
+	}, nil
+}
+
 func MakeFiller(ctx context.Context, db *sql.DB, fields, table string, id *int) (*RepoModelFiller, error) {
 	query := fmt.Sprintf("SELECT %s FROM %s", fields, table)
 

@@ -101,7 +101,7 @@ func createAdmin(auc auth.UseCase) {
 		log.Print(err)
 		log.Print("trying to create user")
 
-		err = auc.CreateUser(ctx, AdminPWD, AdminUNAME)
+		_, err = auc.CreateUser(ctx, AdminPWD, AdminUNAME)
 		if err != nil {
 			log.Print(err)
 		} else {
@@ -131,9 +131,13 @@ func NewApp() *App {
 
 	aisAuthUC := aisauthusecase.NewAisAuthUseCase(aisUC, authUC)
 
-	return &App{
+	app := &App{
 		authUC:    authUC,
 		aisUC:     aisUC,
 		aisAuthUC: aisAuthUC,
 	}
+
+	app.Init()
+
+	return app
 }
