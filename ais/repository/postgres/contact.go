@@ -2,12 +2,10 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
 	"github.com/WeCodingNow/AIS_SUG_backend/models"
-	"github.com/WeCodingNow/AIS_SUG_backend/utils/delivery/postgres"
 )
 
 // CREATE TABLE Контакт(
@@ -17,127 +15,111 @@ import (
 //     значение varchar(100) NOT NULL,
 //     CONSTRAINT контакт_pk PRIMARY KEY (id)
 // );
-type Contact struct {
+
+type repoContact struct {
 	ID  int
 	Def string
 
-	*ContactType
-	*Student
+	ContactType *repoContactType
+	Student     *repoStudent
+
+	model *models.Contact
+}
+
+func NewRepoContact() *repoContact {
+	return &repoContact{}
+}
+
+func (s *repoContact) Fill(scannable Scannable) {
+	scannable.Scan(&s.ID, &s.Def)
+}
+
+func (s repoContact) GetID() int {
+	return s.ID
 }
 
 const contactTable = "Контакт"
-const contactIDField = "id"
 const contactFields = "id,значение"
 const contactStudentFK = "id_студента"
 const contactContactTypeFK = "id_типа_контакта"
 
-func (c *Contact) toModel(studentRef *models.Student) *models.Contact {
-	contact := &models.Contact{
-		ID:          c.ID,
-		Def:         c.Def,
-		ContactType: c.ContactType.toModel(),
-		Student:     studentRef,
+func (c repoContact) GetDescription() ModelDescription {
+	return ModelDescription{
+		Table:  contactTable,
+		Fields: contactFields,
+		Dependencies: []ModelDependency{
+			{
+				DependencyType:  ManyToOne,
+				ForeignKeyField: contactStudentFK,
+				ModelMaker:      func() RepoModel { return NewRepoStudent() },
+			},
+			{
+				DependencyType:  ManyToOne,
+				ForeignKeyField: contactContactTypeFK,
+				ModelMaker:      func() RepoModel { return NewRepoContactType() },
+			},
+		},
 	}
-
-	if contact.Student == nil {
-		contact.Student = c.Student.toModel(contact, nil, nil, nil)
-	}
-
-	return contact
 }
 
-func NewPostgresContact(scannable postgres.Scannable) (*Contact, error) {
-	contact := &Contact{}
-
-	err := scannable.Scan(&contact.ID, &contact.Def)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			err = ais.ErrContactNotFound
+func (c *repoContact) toModel() *models.Contact {
+	if c.model == nil {
+		c.model = &models.Contact{
+			ID:  c.ID,
+			Def: c.Def,
 		}
-		return nil, err
+
+		c.model.ContactType = c.ContactType.toModel()
+		c.model.Student = c.Student.toModel()
 	}
 
-	return contact, nil
+	return c.model
 }
 
-func (c *Contact) Associate(ctx context.Context, r DBAisRepository, studentRef *Student) error {
-	contactTypeRow := r.db.QueryRowContext(
-		ctx,
-		postgres.MakeJoinQuery(
-			contactTypeTable, contactTypeFields, contactTypeIDField,
-			contactTable, contactContactTypeFK, contactIDField),
-		c.ID,
-	)
-
-	contactType, err := NewPostgresContactType(contactTypeRow)
-
-	if err != nil {
-		return err
+func (s *repoContact) AcceptDep(dep interface{}) error {
+	switch dep := dep.(type) {
+	case *repoStudent:
+		s.Student = dep
+	case *repoContactType:
+		s.ContactType = dep
+	default:
+		return fmt.Errorf("no dependency for %v", dep)
 	}
-
-	c.ContactType = contactType
-
-	if studentRef == nil {
-		studentRow := r.db.QueryRowContext(
-			ctx,
-			postgres.MakeJoinQuery(studentTable, studentFields, "id", contactTable, "id_студента", "id"),
-			c.ID,
-		)
-
-		student, err := NewPostgresStudent(studentRow)
-
-		if err != nil {
-			return err
-		}
-
-		student.Associate(ctx, r, c, nil, nil, nil)
-		c.Student = student
-	} else {
-		c.Student = studentRef
-	}
-
 	return nil
 }
 
-func makeContactModel(ctx context.Context, r DBAisRepository, scannable postgres.Scannable) (*models.Contact, error) {
-	contact, err := NewPostgresContact(scannable)
+func (r *DBAisRepository) GetContact(ctx context.Context, id int) (*models.Contact, error) {
+	contact := NewRepoContact()
+	filler, err := MakeFiller(ctx, r.db, contactFields, contactTable, &id)
 
 	if err != nil {
 		return nil, err
 	}
 
-	err = contact.Associate(ctx, r, nil)
+	if !filler.Next() {
+		return nil, ais.ErrContactNotFound
+	}
+
+	err = filler.Fill(contact)
+
+	return contact.toModel(), nil
+}
+
+func (r *DBAisRepository) GetAllContacts(ctx context.Context) ([]*models.Contact, error) {
+	contacts := make([]*models.Contact, 0)
+	filler, err := MakeFiller(ctx, r.db, contactFields, contactTable, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return contact.toModel(nil), nil
-}
-
-func (r DBAisRepository) GetContact(ctx context.Context, contactID int) (*models.Contact, error) {
-	row := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE id = $1", contactFields, contactTable), contactID)
-
-	return makeContactModel(ctx, r, row)
-}
-
-func (r DBAisRepository) GetAllContacts(ctx context.Context) ([]*models.Contact, error) {
-	errValue := []*models.Contact{}
-	rows, err := r.db.QueryContext(ctx, fmt.Sprintf("SELECT %s FROM %s", contactFields, contactTable))
-
-	if err != nil {
-		return errValue, err
-	}
-
-	contacts := []*models.Contact{}
-	for rows.Next() {
-		contact, err := makeContactModel(ctx, r, rows)
-
+	for filler.Next() {
+		newRepoContact := NewRepoContact()
+		err = filler.Fill(newRepoContact)
 		if err != nil {
-			return errValue, nil
+			return nil, err
 		}
-
-		contacts = append(contacts, contact)
+		contacts = append(contacts, newRepoContact.toModel())
 	}
 
 	return contacts, nil

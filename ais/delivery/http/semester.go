@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
-	"github.com/WeCodingNow/AIS_SUG_backend/ais/delivery/types"
+	"github.com/WeCodingNow/AIS_SUG_backend/models"
 	"github.com/labstack/echo"
 )
 
@@ -26,11 +26,7 @@ func (h *Handler) GetSemester(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, types.ToJsonSemester(semester))
-}
-
-type manySemestersOutput struct {
-	Semesters []*types.JSONSemester `json:"semesters"`
+	return c.JSON(http.StatusOK, models.ToJSONSemester(semester, nil))
 }
 
 func (h *Handler) GetAllSemesters(c echo.Context) error {
@@ -40,10 +36,10 @@ func (h *Handler) GetAllSemesters(c echo.Context) error {
 		return err
 	}
 
-	semesterJSONs := make([]*types.JSONSemester, 0, len(semesters))
+	jsonSemesters := make([]models.JSONMap, 0, len(semesters))
 	for _, semester := range semesters {
-		semesterJSONs = append(semesterJSONs, types.ToJsonSemester(semester))
+		jsonSemesters = append(jsonSemesters, models.ToJSONSemester(semester, nil))
 	}
 
-	return c.JSON(http.StatusOK, manySemestersOutput{Semesters: semesterJSONs})
+	return c.JSON(http.StatusOK, jsonSemesters)
 }

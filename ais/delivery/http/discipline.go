@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
-	"github.com/WeCodingNow/AIS_SUG_backend/ais/delivery/types"
+	"github.com/WeCodingNow/AIS_SUG_backend/models"
 	"github.com/labstack/echo"
 )
 
@@ -26,11 +26,7 @@ func (h *Handler) GetDiscipline(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, types.ToJsonDiscipline(discipline))
-}
-
-type manyDisciplinesOutput struct {
-	Disciplines []*types.JSONDiscipline `json:"disciplines"`
+	return c.JSON(http.StatusOK, models.ToJSONDiscipline(discipline, nil))
 }
 
 func (h *Handler) GetAllDisciplines(c echo.Context) error {
@@ -40,10 +36,10 @@ func (h *Handler) GetAllDisciplines(c echo.Context) error {
 		return err
 	}
 
-	jsonDisciplines := make([]*types.JSONDiscipline, 0, len(disciplines))
+	jsonDisciplines := make([]models.JSONMap, 0, len(disciplines))
 	for _, discipline := range disciplines {
-		jsonDisciplines = append(jsonDisciplines, types.ToJsonDiscipline(discipline))
+		jsonDisciplines = append(jsonDisciplines, models.ToJSONDiscipline(discipline, nil))
 	}
 
-	return c.JSON(http.StatusOK, manyDisciplinesOutput{Disciplines: jsonDisciplines})
+	return c.JSON(http.StatusOK, jsonDisciplines)
 }

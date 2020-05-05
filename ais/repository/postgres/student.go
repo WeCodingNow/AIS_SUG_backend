@@ -2,12 +2,10 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
 	"github.com/WeCodingNow/AIS_SUG_backend/models"
-	"github.com/WeCodingNow/AIS_SUG_backend/utils/delivery/postgres"
 )
 
 // CREATE TABLE Студент(
@@ -19,245 +17,148 @@ import (
 //     CONSTRAINT студент_pk PRIMARY KEY (id)
 // );
 
-type Student struct {
+type repoStudent struct {
 	ID         int
 	Name       string
 	SecondName string
-	ThirdName  sql.NullString
+	ThirdName  *string
 
-	Contacts  []*Contact
-	Group     *Group
-	Residence *Residence
-	Marks     []*Mark
+	Group     *repoGroup
+	Residence *repoResidence
+	Marks     map[int]*repoMark
+	Contacts  map[int]*repoContact
+
+	model *models.Student
+}
+
+func NewRepoStudent() *repoStudent {
+	return &repoStudent{
+		Marks:    make(map[int]*repoMark),
+		Contacts: make(map[int]*repoContact),
+	}
+}
+
+func (s *repoStudent) Fill(scannable Scannable) {
+	scannable.Scan(&s.ID, &s.Name, &s.SecondName, &s.ThirdName)
+}
+
+func (s repoStudent) GetID() int {
+	return s.ID
 }
 
 const studentTable = "Студент"
-const studentIDField = "id"
 const studentFields = "id,имя,фамилия,отчество"
 const studentGroupFK = "id_группы"
 const studentResidenceFK = "id_места_жительства"
 
-func (s *Student) toModel(
-	contactRef *models.Contact, groupRef *models.Group,
-	residenceRef *models.Residence, markRef *models.Mark,
-) *models.Student {
-	student := &models.Student{
-		ID:         s.ID,
-		Name:       s.Name,
-		SecondName: s.SecondName,
-
-		Group:     groupRef,
-		Residence: residenceRef,
+func (c repoStudent) GetDescription() ModelDescription {
+	return ModelDescription{
+		Table:  studentTable,
+		Fields: studentFields,
+		Dependencies: []ModelDependency{
+			{
+				DependencyType:  ManyToOne,
+				ForeignKeyField: studentGroupFK,
+				ModelMaker:      func() RepoModel { return NewRepoGroup() },
+			},
+			{
+				DependencyType:  ManyToOne,
+				ForeignKeyField: studentResidenceFK,
+				ModelMaker:      func() RepoModel { return NewRepoResidence() },
+			},
+			{
+				DependencyType:     OneToMany,
+				DepForeignKeyField: markStudentFK,
+				ModelMaker:         func() RepoModel { return NewRepoMark() },
+			},
+			{
+				DependencyType:     OneToMany,
+				DepForeignKeyField: contactStudentFK,
+				ModelMaker:         func() RepoModel { return NewRepoContact() },
+			},
+		},
 	}
-
-	if s.ThirdName.Valid {
-		student.ThirdName = new(string)
-		*student.ThirdName = s.ThirdName.String
-	}
-
-	contacts := make([]*models.Contact, 0)
-	for _, contact := range s.Contacts {
-		if contactRef != nil {
-			if contact.ID == contactRef.ID {
-				contacts = append(contacts, contactRef)
-			} else {
-				contacts = append(contacts, contact.toModel(student))
-			}
-		} else {
-			contacts = append(contacts, contact.toModel(student))
-		}
-	}
-	student.Contacts = contacts
-
-	if student.Group == nil {
-		student.Group = s.Group.toModel(student, nil, nil)
-	}
-
-	if student.Residence == nil {
-		student.Residence = s.Residence.toModel(student)
-	}
-
-	marks := make([]*models.Mark, 0)
-	for _, mark := range s.Marks {
-		if markRef != nil {
-			if mark.ID == markRef.ID {
-				marks = append(marks, markRef)
-			} else {
-				marks = append(marks, mark.toModel(markRef.ControlEvent, student))
-			}
-		} else {
-			marks = append(marks, mark.toModel(nil, student))
-		}
-	}
-	student.Marks = marks
-
-	return student
 }
 
-func NewPostgresStudent(scannable postgres.Scannable) (*Student, error) {
-	student := &Student{}
-
-	err := scannable.Scan(&student.ID, &student.Name, &student.SecondName, &student.ThirdName)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			err = ais.ErrStudentNotFound
+func (c *repoStudent) toModel() *models.Student {
+	if c.model == nil {
+		c.model = &models.Student{
+			ID:         c.ID,
+			Name:       c.Name,
+			SecondName: c.SecondName,
 		}
-		return nil, err
+
+		if c.ThirdName != nil {
+			c.model.ThirdName = c.ThirdName
+		}
+
+		c.model.Group = c.Group.toModel()
+		c.model.Residence = c.Residence.toModel()
+
+		marks := make([]*models.Mark, 0, len(c.Marks))
+		for _, repoM := range c.Marks {
+			marks = append(marks, repoM.toModel())
+		}
+		c.model.Marks = marks
+
+		contacts := make([]*models.Contact, 0, len(c.Contacts))
+		for _, contactM := range c.Contacts {
+			contacts = append(contacts, contactM.toModel())
+		}
+		c.model.Contacts = contacts
 	}
 
-	return student, nil
+	return c.model
 }
 
-func (s *Student) Associate(
-	ctx context.Context, r DBAisRepository,
-	contactRef *Contact, groupRef *Group, residenceRef *Residence, markRef *Mark,
-) error {
-	contactsRow, err := r.db.QueryContext(
-		ctx,
-		postgres.MakeJoinQuery(contactTable, contactFields, contactStudentFK, studentTable, studentIDField, studentIDField),
-		s.ID,
-	)
-
-	if err != nil {
-		return err
+func (s *repoStudent) AcceptDep(dep interface{}) error {
+	switch dep := dep.(type) {
+	case *repoGroup:
+		s.Group = dep
+	case *repoResidence:
+		s.Residence = dep
+	case *repoMark:
+		s.Marks[dep.ID] = dep
+	case *repoContact:
+		s.Contacts[dep.ID] = dep
+	default:
+		return fmt.Errorf("no dependency for %v", dep)
 	}
-
-	contacts := make([]*Contact, 0)
-	for contactsRow.Next() {
-		contact, err := NewPostgresContact(contactsRow)
-
-		if err != nil {
-			return err
-		}
-
-		if contactRef == nil {
-			contact.Associate(ctx, r, s)
-		} else {
-			if contactRef.ID == contact.ID {
-				contact = contactRef
-			} else {
-				contact.Associate(ctx, r, s)
-			}
-		}
-
-		contacts = append(contacts, contact)
-	}
-
-	s.Contacts = contacts
-
-	if groupRef == nil {
-		groupRow := r.db.QueryRowContext(
-			ctx,
-			postgres.MakeJoinQuery(groupTable, groupFields, "id", studentTable, studentGroupFK, "id"),
-			s.ID,
-		)
-
-		group, err := NewPostgresGroup(groupRow)
-
-		if err != nil {
-			return err
-		}
-
-		group.Associate(ctx, r, s, nil, nil)
-		s.Group = group
-	} else {
-		s.Group = groupRef
-	}
-
-	if residenceRef == nil {
-		residenceRow := r.db.QueryRowContext(
-			ctx,
-			postgres.MakeJoinQuery(residenceTable, residenceFields, "id", studentTable, studentResidenceFK, "id"),
-			s.ID,
-		)
-
-		residence, err := NewPostgresResidence(residenceRow)
-
-		if err != nil {
-			return err
-		}
-
-		residence.Associate(ctx, r, s)
-		s.Residence = residence
-	} else {
-		s.Residence = residenceRef
-	}
-
-	markRows, err := r.db.QueryContext(
-		ctx,
-		postgres.MakeJoinQuery(markTable, markFields, markStudentFK, studentTable, studentIDField, studentIDField),
-		s.ID,
-	)
-
-	if err != nil {
-		return err
-	}
-
-	marks := make([]*Mark, 0)
-	for markRows.Next() {
-		mark, err := NewPostgresMark(markRows)
-
-		if err != nil {
-			return err
-		}
-
-		if markRef == nil {
-			mark.Associate(ctx, r, nil, s)
-			// mark.Student = s
-		} else {
-			if markRef.ID == mark.ID {
-				mark = markRef
-			} else {
-				mark.Associate(ctx, r, nil, s)
-			}
-		}
-		mark.Student = s
-		marks = append(marks, mark)
-	}
-
-	s.Marks = marks
-
 	return nil
 }
 
-func makeStudentModel(ctx context.Context, r DBAisRepository, scannable postgres.Scannable) (*models.Student, error) {
-	student, err := NewPostgresStudent(scannable)
+func (r *DBAisRepository) GetStudent(ctx context.Context, id int) (*models.Student, error) {
+	student := NewRepoStudent()
+	filler, err := MakeFiller(ctx, r.db, studentFields, studentTable, &id)
 
 	if err != nil {
 		return nil, err
 	}
 
-	err = student.Associate(ctx, r, nil, nil, nil, nil)
+	if !filler.Next() {
+		return nil, ais.ErrStudentNotFound
+	}
+
+	err = filler.Fill(student)
+
+	return student.toModel(), nil
+}
+
+func (r *DBAisRepository) GetAllStudents(ctx context.Context) ([]*models.Student, error) {
+	students := make([]*models.Student, 0)
+	filler, err := MakeFiller(ctx, r.db, studentFields, studentTable, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return student.toModel(nil, nil, nil, nil), nil
-}
-
-func (r DBAisRepository) GetStudent(ctx context.Context, studentID int) (*models.Student, error) {
-	row := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE id = $1", studentFields, studentTable), studentID)
-	return makeStudentModel(ctx, r, row)
-}
-
-func (r DBAisRepository) GetAllStudents(ctx context.Context) ([]*models.Student, error) {
-	errValue := []*models.Student{}
-	rows, err := r.db.QueryContext(ctx, fmt.Sprintf("SELECT %s FROM %s", studentFields, studentTable))
-
-	if err != nil {
-		return errValue, err
-	}
-
-	students := []*models.Student{}
-	for rows.Next() {
-		student, err := makeStudentModel(ctx, r, rows)
-
+	for filler.Next() {
+		newRepoStudent := NewRepoStudent()
+		err = filler.Fill(newRepoStudent)
 		if err != nil {
-			return errValue, nil
+			return nil, err
 		}
-
-		students = append(students, student)
+		students = append(students, newRepoStudent.toModel())
 	}
 
 	return students, nil

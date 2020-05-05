@@ -2,10 +2,11 @@ package ais
 
 import (
 	"context"
-	// "time"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/models"
 )
+
+// "time"
 
 type UseCase interface {
 	GetCathedra(ctx context.Context, cathedraID int) (*models.Cathedra, error)

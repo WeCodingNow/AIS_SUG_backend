@@ -5,8 +5,7 @@ import (
 	"strconv"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
-	"github.com/WeCodingNow/AIS_SUG_backend/ais/delivery/types"
-
+	"github.com/WeCodingNow/AIS_SUG_backend/models"
 	"github.com/labstack/echo"
 )
 
@@ -27,11 +26,7 @@ func (h *Handler) GetContactType(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, types.ToJsonContactType(contactType))
-}
-
-type manyContactTypesOutput struct {
-	ContactTypes []*types.JSONContactType `json:"contact_types"`
+	return c.JSON(http.StatusOK, models.ToJSONContactType(contactType, nil))
 }
 
 func (h *Handler) GetAllContactTypes(c echo.Context) error {
@@ -41,10 +36,10 @@ func (h *Handler) GetAllContactTypes(c echo.Context) error {
 		return err
 	}
 
-	jsonContactTypes := make([]*types.JSONContactType, 0, len(contactTypes))
-	for _, contactType := range contactTypes {
-		jsonContactTypes = append(jsonContactTypes, types.ToJsonContactType(contactType))
+	jsonContactTypes := make([]models.JSONMap, 0, len(contactTypes))
+	for _, controlEventType := range contactTypes {
+		jsonContactTypes = append(jsonContactTypes, models.ToJSONContactType(controlEventType, nil))
 	}
 
-	return c.JSON(http.StatusOK, manyContactTypesOutput{ContactTypes: jsonContactTypes})
+	return c.JSON(http.StatusOK, jsonContactTypes)
 }

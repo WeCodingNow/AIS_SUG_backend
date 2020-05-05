@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
-	"github.com/WeCodingNow/AIS_SUG_backend/ais/delivery/types"
+	"github.com/WeCodingNow/AIS_SUG_backend/models"
 	"github.com/labstack/echo"
 )
 
@@ -26,11 +26,7 @@ func (h *Handler) GetResidence(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, types.ToResidenceJSONResidence(residence))
-}
-
-type manyResidencesOutput struct {
-	Residences []*types.ResidenceJSONResidence `json:"residences"`
+	return c.JSON(http.StatusOK, models.ToJSONResidence(residence, nil))
 }
 
 func (h *Handler) GetAllResidences(c echo.Context) error {
@@ -40,10 +36,10 @@ func (h *Handler) GetAllResidences(c echo.Context) error {
 		return err
 	}
 
-	jsonResidences := make([]*types.ResidenceJSONResidence, 0, len(residences))
+	jsonResidences := make([]models.JSONMap, 0, len(residences))
 	for _, residence := range residences {
-		jsonResidences = append(jsonResidences, types.ToResidenceJSONResidence(residence))
+		jsonResidences = append(jsonResidences, models.ToJSONResidence(residence, nil))
 	}
 
-	return c.JSON(http.StatusOK, manyResidencesOutput{Residences: jsonResidences})
+	return c.JSON(http.StatusOK, jsonResidences)
 }

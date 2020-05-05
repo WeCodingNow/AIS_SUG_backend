@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
-	"github.com/WeCodingNow/AIS_SUG_backend/ais/delivery/types"
+	"github.com/WeCodingNow/AIS_SUG_backend/models"
 	"github.com/labstack/echo"
 )
 
@@ -26,24 +26,20 @@ func (h *Handler) GetControlEventType(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, types.ToJsonControlEventType(controlEventType))
-}
-
-type manyControlEventTypesOutput struct {
-	ControlEventTypes []*types.JSONControlEventType `json:"control_event_types"`
+	return c.JSON(http.StatusOK, models.ToJSONControlEventType(controlEventType, nil))
 }
 
 func (h *Handler) GetAllControlEventTypes(c echo.Context) error {
-	jsonControlEventTypes, err := h.useCase.GetAllControlEventTypes(c.Request().Context())
+	controlEventTypes, err := h.useCase.GetAllControlEventTypes(c.Request().Context())
 
 	if err != nil {
 		return err
 	}
 
-	controlEventTypes := make([]*types.JSONControlEventType, 0, len(jsonControlEventTypes))
-	for _, controlEventType := range jsonControlEventTypes {
-		controlEventTypes = append(controlEventTypes, types.ToJsonControlEventType(controlEventType))
+	jsonControlEventTypes := make([]models.JSONMap, 0, len(controlEventTypes))
+	for _, controlEventType := range controlEventTypes {
+		jsonControlEventTypes = append(jsonControlEventTypes, models.ToJSONControlEventType(controlEventType, nil))
 	}
 
-	return c.JSON(http.StatusOK, manyControlEventTypesOutput{ControlEventTypes: controlEventTypes})
+	return c.JSON(http.StatusOK, jsonControlEventTypes)
 }

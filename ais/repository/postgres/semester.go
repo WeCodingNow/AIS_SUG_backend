@@ -4,11 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
 	"github.com/WeCodingNow/AIS_SUG_backend/models"
-	"github.com/WeCodingNow/AIS_SUG_backend/utils/delivery/postgres"
 )
 
 // CREATE TABLE Семестр(
@@ -18,197 +16,129 @@ import (
 //     конец date,
 //     CONSTRAINT семестр_pk PRIMARY KEY (id)
 // );
-type Semester struct {
+
+type repoSemester struct {
 	ID        int
 	Number    int
 	Beginning sql.NullTime
 	End       sql.NullTime
 
-	Groups []*Group
-	// ControlEvents []*ControlEvent
+	Groups        map[int]*repoGroup
+	ControlEvents map[int]*repoControlEvent
+	model         *models.Semester
 }
 
-const semesterIDField = "id"
-const semesterFields = "id,номер,начало,конец"
+func NewRepoSemester() *repoSemester {
+	return &repoSemester{
+		Groups:        make(map[int]*repoGroup),
+		ControlEvents: make(map[int]*repoControlEvent),
+	}
+}
+
+func (s *repoSemester) Fill(scannable Scannable) {
+	scannable.Scan(&s.ID, &s.Number, &s.Beginning, &s.End)
+}
+
+func (s repoSemester) GetID() int {
+	return s.ID
+}
+
 const semesterTable = "Семестр"
+const semesterFields = "id,номер,начало,конец"
 
-func (s *Semester) toModel(
-	groupRef *models.Group, controlEventRef *models.ControlEvent,
-) *models.Semester {
-	semester := &models.Semester{
-		ID:        s.ID,
-		Number:    s.Number,
-		Beginning: s.Beginning.Time,
+func (c repoSemester) GetDescription() ModelDescription {
+	return ModelDescription{
+		Table:  semesterTable,
+		Fields: semesterFields,
+		Dependencies: []ModelDependency{
+			{
+				DependencyType:     ManyToMany,
+				ForeignKeyField:    groupSemesterMTMSemesterKey,
+				DepForeignKeyField: groupSemesterMTMGroupKey,
+				ManyToManyTable:    groupSemesterMtM,
+				ModelMaker:         func() RepoModel { return NewRepoGroup() },
+			},
+			{
+				DependencyType:     OneToMany,
+				DepForeignKeyField: controlEventSemesterFK,
+				ModelMaker:         func() RepoModel { return NewRepoControlEvent() },
+			},
+		},
 	}
-
-	if s.End.Valid {
-		semester.End = new(time.Time)
-		*semester.End = s.End.Time
-	}
-
-	groups := make([]*models.Group, 0)
-	for _, group := range s.Groups {
-		if groupRef != nil {
-			if group.ID == groupRef.ID {
-				groups = append(groups, groupRef)
-			} else {
-				groups = append(groups, group.toModel(nil, nil, semester))
-			}
-		} else {
-			groups = append(groups, group.toModel(nil, nil, semester))
+}
+func (c *repoSemester) toModel() *models.Semester {
+	if c.model == nil {
+		c.model = &models.Semester{
+			ID:        c.ID,
+			Number:    c.Number,
+			Beginning: c.Beginning.Time,
 		}
+
+		if c.End.Valid {
+			*c.model.End = c.End.Time
+		}
+
+		groups := make([]*models.Group, 0, len(c.Groups))
+		for _, repoG := range c.Groups {
+			groups = append(groups, repoG.toModel())
+		}
+		c.model.Groups = groups
+
+		controlEvents := make([]*models.ControlEvent, 0, len(c.Groups))
+		for _, repoCe := range c.ControlEvents {
+			controlEvents = append(controlEvents, repoCe.toModel())
+		}
+		c.model.ControlEvents = controlEvents
+
 	}
-	semester.Groups = groups
 
-	// log.Println("THIS RUNS")
-
-	// controlEvents := make([]*models.ControlEvent, 0)
-	// for _, controlEvent := range s.ControlEvents {
-	// 	if controlEventRef != nil {
-	// 		if controlEvent.ID == controlEventRef.ID {
-	// 			controlEvents = append(controlEvents, controlEventRef)
-	// 		} else {
-	// 			controlEvents = append(controlEvents, controlEvent.toModel(nil, semester, nil))
-	// 		}
-	// 	} else {
-	// 		controlEvents = append(controlEvents, controlEvent.toModel(nil, semester, nil))
-	// 	}
-	// }
-	// semester.ControlEvents = controlEvents
-
-	return semester
+	return c.model
 }
 
-func NewPostgresSemester(scannable postgres.Scannable) (*Semester, error) {
-	semester := &Semester{}
-
-	err := scannable.Scan(&semester.ID, &semester.Number, &semester.Beginning, &semester.End)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			err = ais.ErrSemesterNotFound
-		}
-		return nil, err
+func (s *repoSemester) AcceptDep(dep interface{}) error {
+	switch dep := dep.(type) {
+	case *repoGroup:
+		s.Groups[dep.ID] = dep
+	case *repoControlEvent:
+		s.ControlEvents[dep.ID] = dep
+	default:
+		return fmt.Errorf("no dependency for %v", dep)
 	}
-
-	return semester, nil
-}
-
-func (s *Semester) Associate(
-	ctx context.Context, r DBAisRepository,
-	controlEventRef *ControlEvent, groupRef *Group,
-) error {
-	// controlEventsRows, err := r.db.QueryContext(
-	// 	ctx,
-	// 	postgres.MakeJoinQuery(
-	// 		controlEventTable, controlEventFields, controlEventSemesterFK,
-	// 		semesterTable, semesterIDField, semesterIDField,
-	// 	),
-	// 	s.ID,
-	// )
-
-	// if err != nil {
-	// 	return err
-	// }
-
-	// controlEvents := make([]*ControlEvent, 0)
-	// for controlEventsRows.Next() {
-	// 	controlEvent, err := NewPostgresControlEvent(controlEventsRows)
-
-	// 	if err != nil {
-	// 		return err
-	// 	}
-
-	// 	if controlEventRef == nil {
-	// 		controlEvent.Associate(ctx, r, nil, s, nil)
-	// 	} else {
-	// 		if controlEventRef.ID == controlEvent.ID {
-	// 			controlEvent = controlEventRef
-	// 		} else {
-	// 			controlEvent.Associate(ctx, r, nil, s, nil)
-	// 		}
-	// 	}
-
-	// 	controlEvents = append(controlEvents, controlEvent)
-	// }
-	// s.ControlEvents = controlEvents
-
-	groupRows, err := r.db.QueryContext(
-		ctx,
-		postgres.MakeManyToManyJoinQuery(
-			groupTable, groupFields, groupIDField, groupSemesterMTMGroupKey,
-			semesterTable, semesterIDField, groupSemesterMTMSemesterKey,
-			groupSemesterMtM,
-		),
-		s.ID,
-	)
-
-	if err != nil {
-		return err
-	}
-
-	groups := make([]*Group, 0)
-	for groupRows.Next() {
-		group, err := NewPostgresGroup(groupRows)
-
-		if err != nil {
-			return err
-		}
-
-		if groupRef == nil {
-			group.Associate(ctx, r, nil, nil, s)
-		} else {
-			if groupRef.ID == group.ID {
-				group = groupRef
-			} else {
-				group.Associate(ctx, r, nil, nil, s)
-			}
-		}
-
-		groups = append(groups, group)
-	}
-	s.Groups = groups
-
 	return nil
 }
 
-func makeSemesterModel(ctx context.Context, r DBAisRepository, scannable postgres.Scannable) (*models.Semester, error) {
-	semester, err := NewPostgresSemester(scannable)
+func (r *DBAisRepository) GetSemester(ctx context.Context, id int) (*models.Semester, error) {
+	semester := NewRepoSemester()
+	filler, err := MakeFiller(ctx, r.db, semesterFields, semesterTable, &id)
 
 	if err != nil {
 		return nil, err
 	}
 
-	err = semester.Associate(ctx, r, nil, nil)
-
-	if err != nil {
-		return nil, err
+	if !filler.Next() {
+		return nil, ais.ErrSemesterNotFound
 	}
 
-	return semester.toModel(nil, nil), nil
+	err = filler.Fill(semester)
+
+	return semester.toModel(), nil
 }
 
-func (r DBAisRepository) GetSemester(ctx context.Context, semesterID int) (*models.Semester, error) {
-	row := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE id = $1", semesterFields, semesterTable), semesterID)
-	return makeSemesterModel(ctx, r, row)
-}
-
-func (r DBAisRepository) GetAllSemesters(ctx context.Context) ([]*models.Semester, error) {
-	errValue := []*models.Semester{}
-	rows, err := r.db.QueryContext(ctx, fmt.Sprintf("SELECT %s FROM %s", semesterFields, semesterTable))
-
-	if err != nil {
-		return errValue, err
-	}
-
+func (r *DBAisRepository) GetAllSemesters(ctx context.Context) ([]*models.Semester, error) {
 	semesters := make([]*models.Semester, 0)
-	for rows.Next() {
-		semester, err := makeSemesterModel(ctx, r, rows)
+	filler, err := MakeFiller(ctx, r.db, semesterFields, semesterTable, nil)
 
+	if err != nil {
+		return nil, err
+	}
+
+	for filler.Next() {
+		newRepoSemester := NewRepoSemester()
+		err = filler.Fill(newRepoSemester)
 		if err != nil {
-			return errValue, err
+			return nil, err
 		}
-
-		semesters = append(semesters, semester)
+		semesters = append(semesters, newRepoSemester.toModel())
 	}
 
 	return semesters, nil

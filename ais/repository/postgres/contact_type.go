@@ -2,76 +2,88 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
 	"github.com/WeCodingNow/AIS_SUG_backend/models"
-	"github.com/WeCodingNow/AIS_SUG_backend/utils/delivery/postgres"
 )
 
-// CREATE TABLE ТипКонтакта(
-//     id SERIAL,
-//     обозначение varchar(100) NOT NULL,
-//     CONSTRAINT тип_контакта_pk PRIMARY KEY (id)
-// );
-type ContactType struct {
+type repoContactType struct {
 	ID  int
 	Def string
+
+	model *models.ContactType
 }
 
-const contactTypeIDField = "id"
+func NewRepoContactType() *repoContactType {
+	return &repoContactType{}
+}
+
+func (s *repoContactType) Fill(scannable Scannable) {
+	scannable.Scan(&s.ID, &s.Def)
+}
+
+func (s repoContactType) GetID() int {
+	return s.ID
+}
+
 const contactTypeFields = "id,обозначение"
 const contactTypeTable = "ТипКонтакта"
 
-func (c *ContactType) toModel() *models.ContactType {
-	return &models.ContactType{
-		ID:  c.ID,
-		Def: c.Def,
+func (c repoContactType) GetDescription() ModelDescription {
+	return ModelDescription{
+		Table:        contactTypeTable,
+		Fields:       contactTypeFields,
+		Dependencies: []ModelDependency{},
 	}
 }
 
-func NewPostgresContactType(scannable postgres.Scannable) (*ContactType, error) {
-	contactType := &ContactType{}
-
-	err := scannable.Scan(&contactType.ID, &contactType.Def)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			err = ais.ErrContactTypeNotFound
+func (c *repoContactType) toModel() *models.ContactType {
+	if c.model == nil {
+		c.model = &models.ContactType{
+			ID:  c.ID,
+			Def: c.Def,
 		}
-		return nil, err
 	}
 
-	return contactType, nil
+	return c.model
 }
 
-func (r DBAisRepository) GetContactType(ctx context.Context, contactTypeID int) (*models.ContactType, error) {
-	row := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE id = $1", contactTypeFields, contactTypeTable), contactTypeID)
+func (s *repoContactType) AcceptDep(dep interface{}) error {
+	return nil
+}
 
-	contactType, err := NewPostgresContactType(row)
+func (r *DBAisRepository) GetContactType(ctx context.Context, id int) (*models.ContactType, error) {
+	contactType := NewRepoContactType()
+	filler, err := MakeFiller(ctx, r.db, contactTypeFields, contactTypeTable, &id)
 
 	if err != nil {
 		return nil, err
 	}
+
+	if !filler.Next() {
+		return nil, ais.ErrContactTypeNotFound
+	}
+
+	err = filler.Fill(contactType)
 
 	return contactType.toModel(), nil
 }
 
-func (r DBAisRepository) GetAllContactTypes(ctx context.Context) ([]*models.ContactType, error) {
-	errValue := []*models.ContactType{}
-	rows, err := r.db.QueryContext(ctx, fmt.Sprintf("SELECT %s FROM %s", contactTypeFields, contactTypeTable))
+func (r *DBAisRepository) GetAllContactTypes(ctx context.Context) ([]*models.ContactType, error) {
+	contactTypes := make([]*models.ContactType, 0)
+	filler, err := MakeFiller(ctx, r.db, contactTypeFields, contactTypeTable, nil)
 
 	if err != nil {
-		return errValue, err
+		return nil, err
 	}
 
-	contactTypes := make([]*models.ContactType, 0)
-	for rows.Next() {
-		contactType, err := NewPostgresContactType(rows)
+	for filler.Next() {
+		newRepocontactType := NewRepoContactType()
+		err = filler.Fill(newRepocontactType)
 		if err != nil {
-			return errValue, err
+			return nil, err
 		}
-		contactTypes = append(contactTypes, contactType.toModel())
+		contactTypes = append(contactTypes, newRepocontactType.toModel())
 	}
 
 	return contactTypes, nil

@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
-	"github.com/WeCodingNow/AIS_SUG_backend/ais/delivery/types"
+	"github.com/WeCodingNow/AIS_SUG_backend/models"
 	"github.com/labstack/echo"
 )
 
@@ -26,11 +26,7 @@ func (h *Handler) GetControlEvent(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, types.ToControlEventJSONControlEvent(controlEvent))
-}
-
-type manyControlEventsOutput struct {
-	ControlEvents []*types.ControlEventJSONControlEvent `json:"control_events"`
+	return c.JSON(http.StatusOK, models.ToJSONControlEvent(controlEvent, nil))
 }
 
 func (h *Handler) GetAllControlEvents(c echo.Context) error {
@@ -40,10 +36,10 @@ func (h *Handler) GetAllControlEvents(c echo.Context) error {
 		return err
 	}
 
-	jsonControlEvents := make([]*types.ControlEventJSONControlEvent, 0, len(controlEvents))
+	jsonControlEvents := make([]models.JSONMap, 0, len(controlEvents))
 	for _, controlEvent := range controlEvents {
-		jsonControlEvents = append(jsonControlEvents, types.ToControlEventJSONControlEvent(controlEvent))
+		jsonControlEvents = append(jsonControlEvents, models.ToJSONControlEvent(controlEvent, nil))
 	}
 
-	return c.JSON(http.StatusOK, manyControlEventsOutput{ControlEvents: jsonControlEvents})
+	return c.JSON(http.StatusOK, jsonControlEvents)
 }

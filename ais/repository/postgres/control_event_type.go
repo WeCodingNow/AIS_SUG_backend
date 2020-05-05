@@ -2,12 +2,9 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
 	"github.com/WeCodingNow/AIS_SUG_backend/models"
-	"github.com/WeCodingNow/AIS_SUG_backend/utils/delivery/postgres"
 )
 
 // CREATE TABLE ТипКонтрольногоМероприятия(
@@ -15,63 +12,84 @@ import (
 //     обозначение varchar(50),
 //     CONSTRAINT тип_контрольного_мероприятие_pk PRIMARY KEY (id)
 // );
-type ControlEventType struct {
+
+type repoControlEventType struct {
 	ID  int
 	Def string
+
+	model *models.ControlEventType
 }
 
-const controlEventTypeIDField = "id"
+func NewRepoControlEventType() *repoControlEventType {
+	return &repoControlEventType{}
+}
+
+func (s *repoControlEventType) Fill(scannable Scannable) {
+	scannable.Scan(&s.ID, &s.Def)
+}
+
+func (s repoControlEventType) GetID() int {
+	return s.ID
+}
+
 const controlEventTypeFields = "id,обозначение"
 const controlEventTypeTable = "ТипКонтрольногоМероприятия"
 
-func (c *ControlEventType) toModel() *models.ControlEventType {
-	return &models.ControlEventType{
-		ID:  c.ID,
-		Def: c.Def,
+func (c repoControlEventType) GetDescription() ModelDescription {
+	return ModelDescription{
+		Table:        controlEventTypeTable,
+		Fields:       controlEventTypeFields,
+		Dependencies: []ModelDependency{},
 	}
 }
 
-func NewPostgresControlEventType(scannable postgres.Scannable) (*ControlEventType, error) {
-	contactType := &ControlEventType{}
-
-	err := scannable.Scan(&contactType.ID, &contactType.Def)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			err = ais.ErrControlEventTypeNotFound
+func (c *repoControlEventType) toModel() *models.ControlEventType {
+	if c.model == nil {
+		c.model = &models.ControlEventType{
+			ID:  c.ID,
+			Def: c.Def,
 		}
-		return nil, err
 	}
 
-	return contactType, nil
+	return c.model
 }
 
-func (r DBAisRepository) GetControlEventType(ctx context.Context, controlEventTypeID int) (*models.ControlEventType, error) {
-	row := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE id = $1", controlEventTypeFields, controlEventTypeTable), controlEventTypeID)
+func (s *repoControlEventType) AcceptDep(dep interface{}) error {
+	return nil
+}
 
-	contactType, err := NewPostgresControlEventType(row)
+func (r *DBAisRepository) GetControlEventType(ctx context.Context, id int) (*models.ControlEventType, error) {
+	controlEventType := NewRepoControlEventType()
+	filler, err := MakeFiller(ctx, r.db, controlEventTypeFields, controlEventTypeTable, &id)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return contactType.toModel(), nil
-}
-
-func (r DBAisRepository) GetAllControlEventTypes(ctx context.Context) ([]*models.ControlEventType, error) {
-	errValue := []*models.ControlEventType{}
-	rows, err := r.db.QueryContext(ctx, fmt.Sprintf("SELECT %s FROM %s", controlEventTypeFields, controlEventTypeTable))
-
-	if err != nil {
-		return errValue, err
+	if !filler.Next() {
+		return nil, ais.ErrControlEventTypeNotFound
 	}
 
+	err = filler.Fill(controlEventType)
+
+	return controlEventType.toModel(), nil
+}
+
+func (r *DBAisRepository) GetAllControlEventTypes(ctx context.Context) ([]*models.ControlEventType, error) {
 	controlEventTypes := make([]*models.ControlEventType, 0)
-	for rows.Next() {
-		controlEventType, err := NewPostgresControlEventType(rows)
+	filler, err := MakeFiller(ctx, r.db, controlEventTypeFields, controlEventTypeTable, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for filler.Next() {
+		newRepoControlEventType := NewRepoControlEventType()
+		err = filler.Fill(newRepoControlEventType)
 		if err != nil {
-			return errValue, err
+			return nil, err
 		}
-		controlEventTypes = append(controlEventTypes, controlEventType.toModel())
+		controlEventTypes = append(controlEventTypes, newRepoControlEventType.toModel())
 	}
 
 	return controlEventTypes, nil

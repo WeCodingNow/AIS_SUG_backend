@@ -7,7 +7,6 @@ import (
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
 	"github.com/WeCodingNow/AIS_SUG_backend/models"
-	"github.com/WeCodingNow/AIS_SUG_backend/utils/delivery/postgres"
 )
 
 // CREATE TABLE Оценка(
@@ -18,136 +17,113 @@ import (
 //     значение int NOT NULL,
 //     CONSTRAINT оценка_pk PRIMARY KEY (id)
 // );
-type Mark struct {
+
+type repoMark struct {
 	ID    int
 	Date  sql.NullTime
 	Value int
 
-	ControlEvent *ControlEvent
-	Student      *Student
+	ControlEvent *repoControlEvent
+	Student      *repoStudent
+
+	model *models.Mark
+}
+
+func NewRepoMark() *repoMark {
+	return &repoMark{}
+}
+
+func (s *repoMark) Fill(scannable Scannable) {
+	scannable.Scan(&s.ID, &s.Date, &s.Value)
+}
+
+func (s repoMark) GetID() int {
+	return s.ID
 }
 
 const markTable = "Оценка"
-const markIDField = "id"
 const markFields = "id,дата_получения,значение"
 const markControlEventFK = "id_контрольного_мероприятия"
 const markStudentFK = "id_студента"
 
-func (m *Mark) toModel(controlEventRef *models.ControlEvent, studentRef *models.Student) *models.Mark {
-	mark := &models.Mark{
-		ID:    m.ID,
-		Date:  m.Date.Time,
-		Value: m.Value,
-
-		ControlEvent: controlEventRef,
-		Student:      studentRef,
+func (c repoMark) GetDescription() ModelDescription {
+	return ModelDescription{
+		Table:  markTable,
+		Fields: markFields,
+		Dependencies: []ModelDependency{
+			{
+				DependencyType:  ManyToOne,
+				ForeignKeyField: markControlEventFK,
+				ModelMaker:      func() RepoModel { return NewRepoControlEvent() },
+			},
+			{
+				DependencyType:  ManyToOne,
+				ForeignKeyField: markStudentFK,
+				ModelMaker:      func() RepoModel { return NewRepoStudent() },
+			},
+		},
 	}
-
-	if mark.Student == nil {
-		mark.Student = m.Student.toModel(nil, nil, nil, mark)
-	}
-
-	if mark.ControlEvent == nil {
-		mark.ControlEvent = m.ControlEvent.toModel(nil, nil, mark)
-	}
-
-	return mark
 }
 
-func NewPostgresMark(scannable postgres.Scannable) (*Mark, error) {
-	mark := &Mark{}
-
-	err := scannable.Scan(&mark.ID, &mark.Date, &mark.Value)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			err = ais.ErrMarkNotFound
+func (c *repoMark) toModel() *models.Mark {
+	if c.model == nil {
+		c.model = &models.Mark{
+			ID:    c.ID,
+			Date:  c.Date.Time,
+			Value: c.Value,
 		}
-		return nil, err
+
+		c.model.ControlEvent = c.ControlEvent.toModel()
+		c.model.Student = c.Student.toModel()
 	}
 
-	return mark, nil
+	return c.model
 }
 
-func (m *Mark) Associate(ctx context.Context, r DBAisRepository, controlEventRef *ControlEvent, studentRef *Student) error {
-	if controlEventRef == nil {
-		controlEventRow := r.db.QueryRowContext(
-			ctx,
-			postgres.MakeJoinQuery(controlEventTable, controlEventFields, controlEventIDField, markTable, markControlEventFK, markIDField),
-			m.ID,
-		)
-
-		controlEvent, err := NewPostgresControlEvent(controlEventRow)
-
-		if err != nil {
-			return err
-		}
-
-		controlEvent.Associate(ctx, r, nil, nil, m)
-		m.ControlEvent = controlEvent
-	} else {
-		m.ControlEvent = controlEventRef
+func (s *repoMark) AcceptDep(dep interface{}) error {
+	switch dep := dep.(type) {
+	case *repoControlEvent:
+		s.ControlEvent = dep
+	case *repoStudent:
+		s.Student = dep
+	default:
+		return fmt.Errorf("no dependency for %v", dep)
 	}
-
-	if studentRef == nil {
-		studentRow := r.db.QueryRowContext(
-			ctx,
-			postgres.MakeJoinQuery(studentTable, studentFields, studentIDField, markTable, markControlEventFK, markIDField),
-			m.ID,
-		)
-
-		student, err := NewPostgresStudent(studentRow)
-
-		if err != nil {
-			return err
-		}
-
-		student.Associate(ctx, r, nil, nil, nil, m)
-		m.Student = student
-	} else {
-		m.Student = studentRef
-	}
-
 	return nil
 }
 
-func makeMarkModel(ctx context.Context, r DBAisRepository, scannable postgres.Scannable) (*models.Mark, error) {
-	mark, err := NewPostgresMark(scannable)
+func (r *DBAisRepository) GetMark(ctx context.Context, id int) (*models.Mark, error) {
+	mark := NewRepoMark()
+	filler, err := MakeFiller(ctx, r.db, markFields, markTable, &id)
 
 	if err != nil {
 		return nil, err
 	}
 
-	err = mark.Associate(ctx, r, nil, nil)
+	if !filler.Next() {
+		return nil, ais.ErrMarkNotFound
+	}
+
+	err = filler.Fill(mark)
+
+	return mark.toModel(), nil
+}
+
+func (r *DBAisRepository) GetAllMarks(ctx context.Context) ([]*models.Mark, error) {
+	marks := make([]*models.Mark, 0)
+	filler, err := MakeFiller(ctx, r.db, markFields, markTable, nil)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return mark.toModel(nil, nil), nil
-}
-
-func (r DBAisRepository) GetMark(ctx context.Context, markID int) (*models.Mark, error) {
-	row := r.db.QueryRowContext(ctx, fmt.Sprintf("SELECT %s FROM %s WHERE id = $1", markFields, markTable), markID)
-	return makeMarkModel(ctx, r, row)
-}
-
-func (r DBAisRepository) GetAllMarks(ctx context.Context) ([]*models.Mark, error) {
-	errValue := []*models.Mark{}
-	rows, err := r.db.QueryContext(ctx, fmt.Sprintf("SELECT %s FROM %s", markFields, markTable))
-
-	if err != nil {
-		return errValue, err
-	}
-
-	marks := []*models.Mark{}
-	for rows.Next() {
-		mark, err := makeMarkModel(ctx, r, rows)
-
+	for filler.Next() {
+		newRepoMark := NewRepoMark()
+		err = filler.Fill(newRepoMark)
 		if err != nil {
-			return errValue, nil
+			return nil, err
 		}
-
-		marks = append(marks, mark)
+		marks = append(marks, newRepoMark.toModel())
 	}
 
 	return marks, nil

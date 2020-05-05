@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/ais"
-	"github.com/WeCodingNow/AIS_SUG_backend/ais/delivery/types"
+	"github.com/WeCodingNow/AIS_SUG_backend/models"
 	"github.com/labstack/echo"
 )
 
@@ -26,24 +26,20 @@ func (h *Handler) GetMark(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, types.ToMarkJsonMark(mark))
-}
-
-type manyMarksOutput struct {
-	Marks []*types.MarkJSONMark `json:"marks"`
+	return c.JSON(http.StatusOK, models.ToJSONMark(mark, nil))
 }
 
 func (h *Handler) GetAllMarks(c echo.Context) error {
-	markModels, err := h.useCase.GetAllMarks(c.Request().Context())
+	marks, err := h.useCase.GetAllMarks(c.Request().Context())
 
 	if err != nil {
 		return err
 	}
 
-	marks := make([]*types.MarkJSONMark, 0, len(markModels))
-	for _, mark := range markModels {
-		marks = append(marks, types.ToMarkJsonMark(mark))
+	jsonMarks := make([]models.JSONMap, 0, len(marks))
+	for _, mark := range marks {
+		jsonMarks = append(jsonMarks, models.ToJSONMark(mark, nil))
 	}
 
-	return c.JSON(http.StatusOK, manyMarksOutput{Marks: marks})
+	return c.JSON(http.StatusOK, jsonMarks)
 }
