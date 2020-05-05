@@ -4,6 +4,13 @@ import (
 	"github.com/spf13/viper"
 )
 
+func initServer() {
+	viper.SetDefault("server", map[string]interface{}{
+		"host": "localhost",
+		"port": 8080,
+	})
+}
+
 func initPostgres() {
 	viper.SetDefault("postgres", map[string]interface{}{
 		"host":     "localhost",
@@ -26,6 +33,8 @@ func Init() error {
 	viper.AddConfigPath(".")
 	viper.SetConfigName("config")
 	initPostgres()
+	initAuth()
+	initServer()
 
 	return viper.ReadInConfig()
 }
