@@ -25,6 +25,18 @@ func ToJSONGroup(g *Group, refs JSONRefTable) JSONMap {
 		retMap["cathedra"] = ToJSONCathedra(g.Cathedra, refs)
 	}
 
+	refs[StudentT] = true
+	if filled, ok := refs[SemesterT]; !ok || !filled {
+		semesterJSONs := make([]JSONMap, 0, len(g.Semesters))
+		for _, semester := range g.Semesters {
+			semesterJSONs = append(semesterJSONs, ToJSONSemester(semester, refs))
+		}
+
+		retMap["semesters"] = semesterJSONs
+	}
+	//TODO: переделать это
+	delete(refs, StudentT)
+
 	if _, ok := refs[StudentT]; !ok {
 		studentJSONs := make([]JSONMap, 0, len(g.Students))
 		for _, student := range g.Students {
@@ -32,15 +44,6 @@ func ToJSONGroup(g *Group, refs JSONRefTable) JSONMap {
 		}
 
 		retMap["students"] = studentJSONs
-	}
-
-	if _, ok := refs[SemesterT]; !ok {
-		semesterJSONs := make([]JSONMap, 0, len(g.Semesters))
-		for _, semester := range g.Semesters {
-			semesterJSONs = append(semesterJSONs, ToJSONSemester(semester, refs))
-		}
-
-		retMap["semesters"] = semesterJSONs
 	}
 
 	return retMap
