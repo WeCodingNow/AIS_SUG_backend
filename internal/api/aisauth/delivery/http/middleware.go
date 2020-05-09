@@ -11,17 +11,7 @@ import (
 	authhttp "github.com/WeCodingNow/AIS_SUG_backend/internal/api/auth/delivery/http"
 )
 
-// const ContextUserID = "user-id"
-
 const ContextRoleID = "role-id"
-
-// func makeUserMiddleware(a aisauth.UseCase) func(echo.HandlerFunc) echo.HandlerFunc {
-// 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-// 		return func(c echo.Context) error {
-// 			return next(c)
-// 		}
-// 	}
-// }
 
 func MakeRoleMiddleware(a aisauth.UseCase) func(echo.HandlerFunc) echo.HandlerFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {

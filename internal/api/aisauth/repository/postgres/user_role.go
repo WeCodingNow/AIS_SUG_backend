@@ -3,7 +3,6 @@ package postgres
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/internal/api/models"
 )
@@ -21,19 +20,24 @@ import (
 //     CONSTRAINT ais_role_binding_pk PRIMARY KEY (id)
 // );
 
-// type repoRole struct {
-// 	ID  int
-// 	Def string
+type repoRole struct {
+	ID  int
+	Def string
 
-// 	model *models.Role
-// }
+	model *models.Role
+}
 
-// func (r repoRole) toModel() *models.Role {
-// 	return &models.Role{
-// 		ID:  r.ID,
-// 		Def: r.Def,
-// 	}
-// }
+func (r repoRole) toModel() *models.Role {
+	return &models.Role{
+		ID:  r.ID,
+		Def: r.Def,
+	}
+}
+
+func NewRepoRole() *repoRole {
+	return &repoRole{}
+}
+
 const userTable = "ais_user"
 
 const roleTable = "ais_user_role"
@@ -56,13 +60,27 @@ const userRoleBindingFieldsNoID = "ais_user_role_id,ais_user_id"
 // 	  JOIN ais_user ON ais_user_student_binding.user_id = ais_user.id
 
 //rightTable - что получаем
-func makeGetBindingQuery(bindingTable, leftTable, leftKey, rightTable, rightKey string) string {
+func makeGetBindingQueryID(bindingTable, leftTable, leftKey, rightTable, rightKey string) string {
 	return fmt.Sprintf(
 		`SELECT %s.id FROM %s
 			JOIN %s ON %s.%s = %s.id
 			JOIN %s ON %s.%s = %s.id
 			WHERE %s.id = $1`,
 		leftTable, bindingTable,
+		leftTable, bindingTable, leftKey, leftTable,
+		rightTable, bindingTable, rightKey, rightTable,
+		rightTable,
+	)
+}
+
+//rightTable - что получаем
+func makeGetBindingQuery(bindingTable, leftTable, leftKey, rightTable, rightKey string) string {
+	return fmt.Sprintf(
+		`SELECT %s.id,%s.def FROM %s
+			JOIN %s ON %s.%s = %s.id
+			JOIN %s ON %s.%s = %s.id
+			WHERE %s.id = $1`,
+		leftTable, leftTable, bindingTable,
 		leftTable, bindingTable, leftKey, leftTable,
 		rightTable, bindingTable, rightKey, rightTable,
 		rightTable,
@@ -79,17 +97,29 @@ func (r AisAuthRepository) CreateUserRoleBinding(ctx context.Context, user *mode
 }
 
 func (r AisAuthRepository) GetUserRoleID(ctx context.Context, user *models.User) (int, error) {
-	retVal := 0
+	userRoleID := 0
+
+	query := makeGetBindingQueryID(userRoleBindingTable,
+		roleTable, userRoleBindingRoleID,
+		userTable, userRoleBindingUserID,
+	)
+
+	row := r.db.QueryRowContext(ctx, query, user.ID)
+
+	err := row.Scan(&userRoleID)
+	return userRoleID, err
+}
+
+func (r AisAuthRepository) GetUserRole(ctx context.Context, userID int) (*models.Role, error) {
+	repoRole := NewRepoRole()
 
 	query := makeGetBindingQuery(userRoleBindingTable,
 		roleTable, userRoleBindingRoleID,
 		userTable, userRoleBindingUserID,
 	)
 
-	log.Print(query)
+	row := r.db.QueryRowContext(ctx, query, userID)
+	err := row.Scan(&repoRole.ID, &repoRole.Def)
 
-	row := r.db.QueryRowContext(ctx, query, user.ID)
-
-	err := row.Scan(&retVal)
-	return retVal, err
+	return repoRole.toModel(), err
 }

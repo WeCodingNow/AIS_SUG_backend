@@ -11,4 +11,5 @@ func RegisterHTTPEndpoints(e *echo.Echo, uc auth.UseCase, auc aisauth.UseCase) {
 	h := NewHandler(auc)
 
 	e.GET("/check-role", h.CheckRole, authhttp.MakeAuthMiddleware(uc), MakeRoleMiddleware(auc))
+	e.GET("/role", h.GetRole, authhttp.MakeAuthMiddleware(uc))
 }

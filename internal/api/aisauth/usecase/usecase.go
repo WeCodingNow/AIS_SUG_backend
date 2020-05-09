@@ -31,6 +31,10 @@ func (aue AisAuthUseCase) GetUserRoleID(ctx context.Context, user *models.User) 
 	return aue.repo.GetUserRoleID(ctx, user)
 }
 
+func (aue AisAuthUseCase) GetUserRole(ctx context.Context, userID int) (*models.Role, error) {
+	return aue.repo.GetUserRole(ctx, userID)
+}
+
 func (aue AisAuthUseCase) GetUserStudentID(ctx context.Context, user *models.User) (int, error) {
 	return aue.repo.GetUserStudentID(ctx, user)
 }

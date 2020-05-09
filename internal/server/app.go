@@ -50,7 +50,10 @@ const (
 func (a *App) Run() error {
 	e := echo.New()
 	e.Debug = true
-
+	// response.setHeader("Access-Control-Allow-Origin", "*");
+	// response.setHeader("Access-Control-Allow-Credentials", "true");
+	// response.setHeader("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT");
+	// response.setHeader("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers");
 	e.Logger.SetLevel(echoLog.DEBUG)
 	e.Pre(middleware.RemoveTrailingSlash())
 	e.Use(
@@ -59,10 +62,11 @@ func (a *App) Run() error {
 			AllowOrigins:     []string{apiURL},
 			AllowCredentials: true,
 			AllowMethods:     []string{http.MethodGet, http.MethodPost, http.MethodPatch, http.MethodPut, http.MethodDelete, http.MethodOptions},
-			AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderXCSRFToken},
-			ExposeHeaders:    []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderXCSRFToken},
+			AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderXCSRFToken, echo.HeaderAuthorization, echo.HeaderAccessControlAllowCredentials, echo.HeaderAccessControlAllowHeaders},
+			ExposeHeaders:    []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderXCSRFToken, echo.HeaderAuthorization, echo.HeaderAccessControlAllowCredentials, echo.HeaderAccessControlAllowHeaders},
 		}),
 	)
+
 	authhttp.RegisterHTTPEndpoints(e, a.authUC)
 	aishttp.RegisterHTTPEndpoints(e, a.aisUC)
 	aisauthhttp.RegisterHTTPEndpoints(e, a.authUC, a.aisAuthUC)
