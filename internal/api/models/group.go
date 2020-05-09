@@ -10,39 +10,28 @@ type Group struct {
 }
 
 func ToJSONGroup(g *Group, refs JSONRefTable) JSONMap {
-	if refs == nil {
-		refs = make(JSONRefTable)
-	}
-
-	refs[GroupT] = true
-
 	retMap := JSONMap{
 		"id":     g.ID,
 		"number": g.Number,
 	}
 
-	if _, ok := refs[CathedraT]; !ok {
-		retMap["cathedra"] = ToJSONCathedra(g.Cathedra, refs)
+	if filled, ok := refs[CathedraT]; !(ok && filled) {
+		retMap["cathedra"] = ToJSONCathedra(g.Cathedra, withDontWant(refs, GroupT))
 	}
 
-	refs[StudentT] = true
-	if filled, ok := refs[SemesterT]; !ok || !filled {
+	if filled, ok := refs[SemesterT]; !(ok && filled) {
 		semesterJSONs := make([]JSONMap, 0, len(g.Semesters))
 		for _, semester := range g.Semesters {
-			semesterJSONs = append(semesterJSONs, ToJSONSemester(semester, refs))
+			semesterJSONs = append(semesterJSONs, ToJSONSemester(semester, withDontWant(refs, GroupT)))
 		}
-
 		retMap["semesters"] = semesterJSONs
 	}
-	//TODO: переделать это
-	delete(refs, StudentT)
 
-	if _, ok := refs[StudentT]; !ok {
+	if filled, ok := refs[StudentT]; !(ok && filled) {
 		studentJSONs := make([]JSONMap, 0, len(g.Students))
 		for _, student := range g.Students {
-			studentJSONs = append(studentJSONs, ToJSONStudent(student, refs))
+			studentJSONs = append(studentJSONs, ToJSONStudent(student, withDontWant(refs, GroupT)))
 		}
-
 		retMap["students"] = studentJSONs
 	}
 

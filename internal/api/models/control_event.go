@@ -13,36 +13,29 @@ type ControlEvent struct {
 }
 
 func ToJSONControlEvent(ce *ControlEvent, refs JSONRefTable) JSONMap {
-	if refs == nil {
-		refs = make(JSONRefTable)
-	}
-
-	refs[ControlEventT] = true
-
 	retMap := JSONMap{
 		"id":   ce.ID,
 		"date": ce.Date,
 	}
 
-	if _, ok := refs[ControlEventTypeT]; !ok {
-		retMap["type"] = ToJSONControlEventType(ce.ControlEventType, refs)
+	if filled, ok := refs[ControlEventTypeT]; !(ok && filled) {
+		retMap["type"] = ToJSONControlEventType(ce.ControlEventType, withDontWant(refs, ControlEventT))
 	}
 
-	if _, ok := refs[DisciplineT]; !ok {
-		retMap["discipline"] = ToJSONDiscipline(ce.Discipline, refs)
+	if filled, ok := refs[DisciplineT]; !(ok && filled) {
+		retMap["discipline"] = ToJSONDiscipline(ce.Discipline, withDontWant(refs, ControlEventT))
 	}
 
-	if _, ok := refs[MarkT]; !ok {
+	if filled, ok := refs[MarkT]; !(ok && filled) {
 		markJSONs := make([]JSONMap, 0, len(ce.Marks))
 		for _, mark := range ce.Marks {
-			markJSONs = append(markJSONs, ToJSONMark(mark, refs))
+			markJSONs = append(markJSONs, ToJSONMark(mark, withDontWant(refs, ControlEventT, GroupT)))
 		}
-
 		retMap["marks"] = markJSONs
 	}
 
-	if _, ok := refs[SemesterT]; !ok {
-		retMap["semester"] = ToJSONSemester(ce.Semester, refs)
+	if filled, ok := refs[SemesterT]; !(ok && filled) {
+		retMap["semester"] = ToJSONSemester(ce.Semester, withDontWant(refs, ControlEventT, GroupT))
 	}
 
 	return retMap

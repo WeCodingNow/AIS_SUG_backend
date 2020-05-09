@@ -12,24 +12,18 @@ type Mark struct {
 }
 
 func ToJSONMark(m *Mark, refs JSONRefTable) JSONMap {
-	if refs == nil {
-		refs = make(JSONRefTable)
-	}
-
-	refs[MarkT] = true
-
 	retMap := JSONMap{
 		"id":    m.ID,
 		"date":  m.Date,
 		"value": m.Value,
 	}
 
-	if _, ok := refs[StudentT]; !ok {
-		retMap["student"] = ToJSONStudent(m.Student, refs)
+	if filled, ok := refs[StudentT]; !(ok && filled) {
+		retMap["student"] = ToJSONStudent(m.Student, withDontWant(refs, MarkT))
 	}
 
-	if _, ok := refs[ControlEventT]; !ok {
-		retMap["control_event"] = ToJSONControlEvent(m.ControlEvent, refs)
+	if filled, ok := refs[ControlEventT]; !(ok && filled) {
+		retMap["control_event"] = ToJSONControlEvent(m.ControlEvent, withDontWant(refs, MarkT))
 	}
 
 	return retMap

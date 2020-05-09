@@ -13,12 +13,6 @@ type Student struct {
 }
 
 func ToJSONStudent(s *Student, refs JSONRefTable) JSONMap {
-	if refs == nil {
-		refs = make(JSONRefTable)
-	}
-
-	refs[StudentT] = true
-
 	retMap := JSONMap{
 		"id":          s.ID,
 		"name":        s.Name,
@@ -26,26 +20,26 @@ func ToJSONStudent(s *Student, refs JSONRefTable) JSONMap {
 		"third_name":  s.ThirdName,
 	}
 
-	if _, ok := refs[GroupT]; !ok {
-		retMap["group"] = ToJSONGroup(s.Group, refs)
+	if filled, ok := refs[GroupT]; !(ok && filled) {
+		retMap["group"] = ToJSONGroup(s.Group, withDontWant(refs, StudentT))
 	}
 
-	if _, ok := refs[ResidenceT]; !ok {
-		retMap["residence"] = ToJSONResidence(s.Residence, refs)
+	if filled, ok := refs[ResidenceT]; !(ok && filled) {
+		retMap["residence"] = ToJSONResidence(s.Residence, withDontWant(refs, StudentT))
 	}
 
-	if _, ok := refs[ContactT]; !ok {
+	if filled, ok := refs[ContactT]; !(ok && filled) {
 		contactJSONs := make([]JSONMap, 0, len(s.Contacts))
 		for _, contact := range s.Contacts {
-			contactJSONs = append(contactJSONs, ToJSONContact(contact, refs))
+			contactJSONs = append(contactJSONs, ToJSONContact(contact, withDontWant(refs, StudentT)))
 		}
 		retMap["contacts"] = contactJSONs
 	}
 
-	if _, ok := refs[MarkT]; !ok {
+	if filled, ok := refs[MarkT]; !(ok && filled) {
 		markJSONs := make([]JSONMap, 0, len(s.Marks))
 		for _, mark := range s.Marks {
-			markJSONs = append(markJSONs, ToJSONMark(mark, refs))
+			markJSONs = append(markJSONs, ToJSONMark(mark, withDontWant(refs, StudentT)))
 		}
 		retMap["marks"] = markJSONs
 	}

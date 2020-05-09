@@ -22,3 +22,21 @@ const (
 	DisciplineT
 	ResidenceT
 )
+
+func withDontWant(oldRefs JSONRefTable, types ...JSONModelType) JSONRefTable {
+	if oldRefs == nil {
+		oldRefs = make(JSONRefTable)
+	}
+
+	newRefs := make(JSONRefTable, len(oldRefs)+len(types))
+
+	for t, ref := range oldRefs {
+		newRefs[t] = ref
+	}
+
+	for _, t := range types {
+		newRefs[t] = true
+	}
+
+	return newRefs
+}

@@ -9,24 +9,17 @@ type Cathedra struct {
 }
 
 func ToJSONCathedra(c *Cathedra, refs JSONRefTable) JSONMap {
-	if refs == nil {
-		refs = make(JSONRefTable)
-	}
-
-	refs[CathedraT] = true
-
 	retMap := JSONMap{
 		"id":         c.ID,
 		"name":       c.Name,
 		"short_name": c.ShortName,
 	}
 
-	if _, ok := refs[GroupT]; !ok {
+	if filled, ok := refs[GroupT]; !(ok && filled) {
 		groupJSONs := make([]JSONMap, 0, len(c.Groups))
 		for _, group := range c.Groups {
-			groupJSONs = append(groupJSONs, ToJSONGroup(group, refs))
+			groupJSONs = append(groupJSONs, ToJSONGroup(group, withDontWant(refs, StudentT)))
 		}
-
 		retMap["groups"] = groupJSONs
 	}
 

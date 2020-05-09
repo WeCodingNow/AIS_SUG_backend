@@ -9,23 +9,17 @@ type Contact struct {
 }
 
 func ToJSONContact(c *Contact, refs JSONRefTable) JSONMap {
-	if refs == nil {
-		refs = make(JSONRefTable)
-	}
-
-	refs[ContactT] = true
-
 	retMap := JSONMap{
 		"id":  c.ID,
 		"def": c.Def,
 	}
 
-	if _, ok := refs[ContactTypeT]; !ok {
-		retMap["type"] = ToJSONContactType(c.ContactType, refs)
+	if filled, ok := refs[ContactTypeT]; !(ok && filled) {
+		retMap["type"] = ToJSONContactType(c.ContactType, withDontWant(refs, ContactT))
 	}
 
-	if _, ok := refs[StudentT]; !ok {
-		retMap["student"] = ToJSONStudent(c.Student, refs)
+	if filled, ok := refs[StudentT]; !(ok && filled) {
+		retMap["student"] = ToJSONStudent(c.Student, withDontWant(refs, ContactT))
 	}
 
 	return retMap

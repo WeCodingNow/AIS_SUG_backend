@@ -6,12 +6,6 @@ type ControlEventType struct {
 }
 
 func ToJSONControlEventType(cet *ControlEventType, refs JSONRefTable) JSONMap {
-	if refs == nil {
-		refs = make(JSONRefTable)
-	}
-
-	refs[ControlEventT] = true
-
 	retMap := JSONMap{
 		"id":  cet.ID,
 		"def": cet.Def,

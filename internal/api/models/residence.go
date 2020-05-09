@@ -10,12 +10,6 @@ type Residence struct {
 }
 
 func ToJSONResidence(r *Residence, refs JSONRefTable) JSONMap {
-	if refs == nil {
-		refs = make(JSONRefTable)
-	}
-
-	refs[ResidenceT] = true
-
 	retMap := JSONMap{
 		"id":        r.ID,
 		"address":   r.Address,
@@ -23,10 +17,11 @@ func ToJSONResidence(r *Residence, refs JSONRefTable) JSONMap {
 		"community": r.Community,
 	}
 
-	if _, ok := refs[StudentT]; !ok {
+	if filled, ok := refs[StudentT]; !(ok && filled) {
 		studentJSONs := make([]JSONMap, 0, len(r.Students))
 		for _, student := range r.Students {
-			studentJSONs = append(studentJSONs, ToJSONStudent(student, refs))
+			// studentJSONs = append(studentJSONs, ToJSONStudent(student, refs))
+			studentJSONs = append(studentJSONs, ToJSONStudent(student, withDontWant(refs, ResidenceT)))
 		}
 
 		retMap["students"] = studentJSONs

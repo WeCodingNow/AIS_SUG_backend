@@ -37,7 +37,9 @@ func (h *Handler) SignIn(c echo.Context) error {
 	token, err := h.useCase.SignIn(c.Request().Context(), inp.Username, inp.Password)
 
 	if err != nil {
-		return err
+		if err == auth.ErrUserNotFound {
+			return echo.NewHTTPError(http.StatusUnauthorized, err.Error())
+		}
 	}
 
 	return c.JSON(http.StatusOK, signedInJSON{
