@@ -82,6 +82,5 @@ func (r AisAuthRepository) GetUserStudentID(ctx context.Context, userID int) (*i
 		}
 	}
 
-	// err := row.Scan(&retVal)
 	return retVal, err
 }

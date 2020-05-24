@@ -6,9 +6,6 @@ import (
 	"github.com/WeCodingNow/AIS_SUG_backend/internal/api/models"
 )
 
-// 							student_id  user_id
-// type StudentsWithUsers = map[int]*int;
-
 type StudentWithUserAndRole struct {
 	StudentID int  `json:"student_id"`
 	UserID    *int `json:"user_id"`
