@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/internal/api/models"
 )
@@ -73,14 +74,24 @@ func makeGetBindingQueryID(bindingTable, leftTable, leftKey, rightTable, rightKe
 	)
 }
 
+func prefixFields(table, fieldsString string) string {
+	fields := strings.Split(fieldsString, ",")
+
+	for i := range fields {
+		fields[i] = fmt.Sprintf("%s.%s", table, fields[i])
+	}
+
+	return strings.Join(fields, ",")
+}
+
 //rightTable - что получаем
-func makeGetBindingQuery(bindingTable, leftTable, leftKey, rightTable, rightKey string) string {
+func makeGetBindingQuery(bindingTable, leftTable, leftTableFields, leftKey, rightTable, rightKey string) string {
 	return fmt.Sprintf(
-		`SELECT %s.id,%s.def FROM %s
+		`SELECT %s FROM %s
 			JOIN %s ON %s.%s = %s.id
 			JOIN %s ON %s.%s = %s.id
 			WHERE %s.id = $1`,
-		leftTable, leftTable, bindingTable,
+		prefixFields(leftTable, leftTableFields), bindingTable,
 		leftTable, bindingTable, leftKey, leftTable,
 		rightTable, bindingTable, rightKey, rightTable,
 		rightTable,
@@ -114,7 +125,7 @@ func (r AisAuthRepository) GetUserRole(ctx context.Context, userID int) (*models
 	repoRole := NewRepoRole()
 
 	query := makeGetBindingQuery(userRoleBindingTable,
-		roleTable, userRoleBindingRoleID,
+		roleTable, "id,def", userRoleBindingRoleID,
 		userTable, userRoleBindingUserID,
 	)
 
@@ -122,4 +133,41 @@ func (r AisAuthRepository) GetUserRole(ctx context.Context, userID int) (*models
 	err := row.Scan(&repoRole.ID, &repoRole.Def)
 
 	return repoRole.toModel(), err
+}
+
+func (r AisAuthRepository) GetRoles(ctx context.Context) ([]*models.Role, error) {
+	roles := make([]*models.Role, 0)
+
+	query := "select id, def from ais_user_role"
+
+	rows, err := r.db.QueryContext(ctx, query)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		role := new(models.Role)
+
+		err = rows.Scan(&role.ID, &role.Def)
+
+		if err != nil {
+			return nil, err
+		}
+
+		roles = append(roles, role)
+	}
+
+	return roles, nil
+}
+
+func (r AisAuthRepository) PromoteUser(ctx context.Context, userID int, roleID int) error {
+	query := `UPDATE ais_role_binding
+	SET ais_user_role_id = $2
+	WHERE ais_user_id = $1;
+	`
+
+	_, err := r.db.ExecContext(ctx, query, userID, roleID)
+
+	return err
 }

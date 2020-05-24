@@ -50,10 +50,6 @@ const (
 func (a *App) Run() error {
 	e := echo.New()
 	e.Debug = true
-	// response.setHeader("Access-Control-Allow-Origin", "*");
-	// response.setHeader("Access-Control-Allow-Credentials", "true");
-	// response.setHeader("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT");
-	// response.setHeader("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers");
 	e.Logger.SetLevel(echoLog.DEBUG)
 	e.Pre(middleware.RemoveTrailingSlash())
 	e.Use(
@@ -146,7 +142,7 @@ func (a *App) createStudent() {
 
 func (a *App) Init() {
 	a.createAdmin()
-	a.createStudent()
+	// a.createStudent()
 }
 
 func NewApp() *App {

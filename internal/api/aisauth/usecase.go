@@ -6,9 +6,25 @@ import (
 	"github.com/WeCodingNow/AIS_SUG_backend/internal/api/models"
 )
 
+// 							student_id  user_id
+// type StudentsWithUsers = map[int]*int;
+
+type StudentWithUserAndRole struct {
+	StudentID int  `json:"student_id"`
+	UserID    *int `json:"user_id"`
+	RoleID    *int `json:"role_id"`
+}
+
 type UseCase interface {
 	CreateStudentWithCreds(ctx context.Context, user *models.User, role *models.Role, student *models.Student) error
+	AssignOrCreateStudentWithCreds(ctx context.Context, user *models.User, targetStudent *models.Student) error
+
 	GetUserRoleID(ctx context.Context, user *models.User) (int, error)
 	GetUserRole(ctx context.Context, userID int) (*models.Role, error)
-	GetUserStudentID(ctx context.Context, user *models.User) (int, error)
+	GetRoles(ctx context.Context) ([]*models.Role, error)
+
+	GetUserStudentID(ctx context.Context, userID int) (*int, error)
+	GetStudentsWithUsers(ctx context.Context) ([]StudentWithUserAndRole, error)
+
+	PromoteUser(ctx context.Context, userID int, roleID int) error
 }

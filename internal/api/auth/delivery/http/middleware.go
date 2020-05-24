@@ -37,6 +37,10 @@ func MakeAuthMiddleware(a auth.UseCase) func(echo.HandlerFunc) echo.HandlerFunc 
 			token := headerParts[1]
 			user, err := a.ParseToken(c.Request().Context(), token)
 
+			if err != nil {
+				return echo.NewHTTPError(http.StatusUnauthorized, err.Error())
+			}
+
 			c.Set(ContextUserToken, token)
 			c.Set(ContextUserID, user.ID)
 

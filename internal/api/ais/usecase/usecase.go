@@ -47,8 +47,8 @@ func (ais AisUseCase) GetStudent(ctx context.Context, studentID int) (*models.St
 	return ais.aisRepo.GetStudent(ctx, studentID)
 }
 
-func (ais AisUseCase) CreateStudent(ctx context.Context, name, secondName string, thirdName *string, groupID int) (*models.Student, error) {
-	return ais.aisRepo.CreateStudent(ctx, name, secondName, thirdName, groupID)
+func (ais AisUseCase) CreateStudent(ctx context.Context, name, secondName string, thirdName *string, groupID, residenceID int) (*models.Student, error) {
+	return ais.aisRepo.CreateStudent(ctx, name, secondName, thirdName, groupID, residenceID)
 }
 
 func (ais AisUseCase) GetAllStudents(ctx context.Context) ([]*models.Student, error) {

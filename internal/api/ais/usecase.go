@@ -18,7 +18,7 @@ type UseCase interface {
 	GetGroup(ctx context.Context, groupID int) (*models.Group, error)
 	GetAllGroups(ctx context.Context) ([]*models.Group, error)
 
-	CreateStudent(ctx context.Context, name, secondName string, thirdName *string, groupID int) (*models.Student, error)
+	CreateStudent(ctx context.Context, name, secondName string, thirdName *string, groupID, residenceID int) (*models.Student, error)
 	GetStudent(ctx context.Context, studentID int) (*models.Student, error)
 	GetAllStudents(ctx context.Context) ([]*models.Student, error)
 

@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -17,7 +18,6 @@ func MakeRoleMiddleware(a aisauth.UseCase) func(echo.HandlerFunc) echo.HandlerFu
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			userID := c.Get(authhttp.ContextUserID).(int)
-
 			roleID, err := a.GetUserRoleID(c.Request().Context(), &models.User{ID: userID})
 
 			if err != nil {
@@ -26,6 +26,37 @@ func MakeRoleMiddleware(a aisauth.UseCase) func(echo.HandlerFunc) echo.HandlerFu
 			}
 
 			c.Set(ContextRoleID, roleID)
+
+			return next(c)
+		}
+	}
+}
+
+func MakeRBACMiddleware(a aisauth.UseCase, rolesWithAccess []int) func(echo.HandlerFunc) echo.HandlerFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			userID := c.Get(authhttp.ContextUserID).(int)
+			role, err := a.GetUserRole(c.Request().Context(), userID)
+
+			if err != nil {
+				return echo.NewHTTPError(http.StatusUnauthorized)
+			}
+
+			gotAccess := false
+
+			for _, r := range rolesWithAccess {
+				if role.ID == r {
+					gotAccess = true
+				}
+			}
+
+			if !gotAccess {
+				return echo.NewHTTPError(
+					http.StatusUnauthorized,
+					fmt.Sprintf(
+						"role %s doesn't have access to %s",
+						role.Def, c.Request().URL.Path))
+			}
 
 			return next(c)
 		}

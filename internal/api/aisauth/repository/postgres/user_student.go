@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/WeCodingNow/AIS_SUG_backend/internal/api/aisauth"
 	"github.com/WeCodingNow/AIS_SUG_backend/internal/api/models"
 )
 
@@ -36,14 +37,51 @@ func (r AisAuthRepository) CreateUserStudentBinding(ctx context.Context, user *m
 	return err
 }
 
-func (r AisAuthRepository) GetUserStudentID(ctx context.Context, user *models.User) (int, error) {
+func (r AisAuthRepository) GetStudentUserID(ctx context.Context, student *models.Student) (int, error) {
 	retVal := 0
 
-	row := r.db.QueryRowContext(ctx, makeGetBindingQuery(userStudentBindingTable,
+	row, err := r.db.QueryContext(ctx, makeGetBindingQuery(userStudentBindingTable,
+		userTable, "id", userStudentBindingUserID,
 		studentTable, userStudentBindingStudentID,
-		userTable, userStudentBindingUserID,
-	))
+	), student.ID)
 
-	err := row.Scan(&retVal)
+	if err != nil {
+		return retVal, err
+	}
+
+	if !row.Next() {
+		return retVal, aisauth.ErrNoStudentUser
+	}
+
+	err = row.Scan(&retVal)
+
+	if err != nil {
+		return retVal, err
+	}
+
+	return retVal, err
+}
+
+func (r AisAuthRepository) GetUserStudentID(ctx context.Context, userID int) (*int, error) {
+	var retVal *int
+
+	row, err := r.db.QueryContext(ctx, makeGetBindingQuery(userStudentBindingTable,
+		studentTable, "id", userStudentBindingStudentID,
+		userTable, userStudentBindingUserID,
+	), userID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if row.Next() {
+		retVal = new(int)
+		err = row.Scan(&retVal)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// err := row.Scan(&retVal)
 	return retVal, err
 }

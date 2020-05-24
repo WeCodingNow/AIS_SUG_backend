@@ -167,10 +167,10 @@ func (r *DBAisRepository) GetAllStudents(ctx context.Context) ([]*models.Student
 
 // const insertQuery
 
-func (r *DBAisRepository) CreateStudent(ctx context.Context, name, secondName string, thirdName *string, groupID int) (*models.Student, error) {
+func (r *DBAisRepository) CreateStudent(ctx context.Context, name, secondName string, thirdName *string, groupID, residenceID int) (*models.Student, error) {
 	row := r.db.QueryRowContext(ctx,
-		`INSERT INTO Студент(имя,фамилия,отчество,id_группы) VALUES ( $1, $2, $3, $4) RETURNING id`,
-		name, secondName, thirdName, groupID,
+		`INSERT INTO Студент(имя,фамилия,отчество,id_группы, id_места_жительства) VALUES ( $1, $2, $3, $4, $5) RETURNING id`,
+		name, secondName, thirdName, groupID, residenceID,
 	)
 
 	var newID int
