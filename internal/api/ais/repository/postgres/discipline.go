@@ -22,6 +22,8 @@ type repoDiscipline struct {
 	Hours int
 
 	ControlEvents map[int]*repoControlEvent
+	Semesters     map[int]*repoSemester
+	Backlogs      map[int]*repoBacklog
 
 	model *models.Discipline
 }
@@ -29,11 +31,13 @@ type repoDiscipline struct {
 func NewRepoDiscipline() *repoDiscipline {
 	return &repoDiscipline{
 		ControlEvents: make(map[int]*repoControlEvent),
+		Semesters:     make(map[int]*repoSemester),
+		Backlogs:      make(map[int]*repoBacklog),
 	}
 }
 
-func (s *repoDiscipline) Fill(scannable pgorm.Scannable) {
-	scannable.Scan(&s.ID, &s.Name, &s.Hours)
+func (s *repoDiscipline) Fill(scannable pgorm.Scannable) error {
+	return scannable.Scan(&s.ID, &s.Name, &s.Hours)
 }
 
 func (s repoDiscipline) GetID() int {
@@ -53,32 +57,60 @@ func (c repoDiscipline) GetDescription() pgorm.ModelDescription {
 				DepForeignKeyField: controlEventDisciplineFK,
 				ModelMaker:         func() pgorm.RepoModel { return NewRepoControlEvent() },
 			},
+			{
+				DependencyType:     pgorm.OneToMany,
+				DepForeignKeyField: backlogDisciplineFK,
+				ModelMaker:         func() pgorm.RepoModel { return NewRepoBacklog() },
+			},
+			{
+				DependencyType:     pgorm.ManyToMany,
+				ForeignKeyField:    disciplineSemesterMTMDisciplineKey,
+				DepForeignKeyField: disciplineSemesterMTMSemesterKey,
+				ManyToManyTable:    disciplineSemesterMtM,
+				ModelMaker:         func() pgorm.RepoModel { return NewRepoSemester() },
+			},
 		},
 	}
 }
 
-func (c *repoDiscipline) toModel() *models.Discipline {
-	if c.model == nil {
-		c.model = &models.Discipline{
-			ID:    c.ID,
-			Name:  c.Name,
-			Hours: c.Hours,
+func (d *repoDiscipline) toModel() *models.Discipline {
+	if d.model == nil {
+		d.model = &models.Discipline{
+			ID:    d.ID,
+			Name:  d.Name,
+			Hours: d.Hours,
 		}
 
-		controlEvents := make([]*models.ControlEvent, 0, len(c.ControlEvents))
-		for _, repoM := range c.ControlEvents {
+		controlEvents := make([]*models.ControlEvent, 0, len(d.ControlEvents))
+		for _, repoM := range d.ControlEvents {
 			controlEvents = append(controlEvents, repoM.toModel())
 		}
-		c.model.ControlEvents = controlEvents
+		d.model.ControlEvents = controlEvents
+
+		semesters := make([]*models.Semester, 0, len(d.Semesters))
+		for _, repoS := range d.Semesters {
+			semesters = append(semesters, repoS.toModel())
+		}
+		d.model.Semesters = semesters
+
+		backlogs := make([]*models.Backlog, 0, len(d.Backlogs))
+		for _, repoB := range d.Backlogs {
+			backlogs = append(backlogs, repoB.toModel())
+		}
+		d.model.Backlogs = backlogs
 	}
 
-	return c.model
+	return d.model
 }
 
-func (s *repoDiscipline) AcceptDep(dep interface{}) error {
+func (d *repoDiscipline) AcceptDep(dep interface{}) error {
 	switch dep := dep.(type) {
 	case *repoControlEvent:
-		s.ControlEvents[dep.ID] = dep
+		d.ControlEvents[dep.ID] = dep
+	case *repoSemester:
+		d.Semesters[dep.ID] = dep
+	case *repoBacklog:
+		d.Backlogs[dep.ID] = dep
 	default:
 		return fmt.Errorf("no dependency for %v", dep)
 	}

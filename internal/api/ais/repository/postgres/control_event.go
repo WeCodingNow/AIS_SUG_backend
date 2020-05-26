@@ -37,8 +37,8 @@ func NewRepoControlEvent() *repoControlEvent {
 	}
 }
 
-func (s *repoControlEvent) Fill(scannable pgorm.Scannable) {
-	scannable.Scan(&s.ID, &s.Date)
+func (s *repoControlEvent) Fill(scannable pgorm.Scannable) error {
+	return scannable.Scan(&s.ID, &s.Date)
 }
 
 func (s repoControlEvent) GetID() int {

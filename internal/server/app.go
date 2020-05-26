@@ -64,7 +64,7 @@ func (a *App) Run() error {
 	)
 
 	authhttp.RegisterHTTPEndpoints(e, a.authUC)
-	aishttp.RegisterHTTPEndpoints(e, a.aisUC)
+	aishttp.RegisterHTTPEndpoints(e, a.aisUC, a.authUC, a.aisAuthUC)
 	aisauthhttp.RegisterHTTPEndpoints(e, a.authUC, a.aisAuthUC)
 
 	addr := fmt.Sprintf("%s:%d", viper.GetString("server.host"), viper.GetInt("server.port"))

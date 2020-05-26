@@ -2,6 +2,7 @@ package ais
 
 import (
 	"context"
+	"time"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/internal/api/models"
 )
@@ -37,6 +38,7 @@ type AisRepository interface {
 	GetContact(ctx context.Context, contactID int) (*models.Contact, error)
 	GetAllContacts(ctx context.Context) ([]*models.Contact, error)
 
+	CreateResidence(ctx context.Context, address, city string, community bool) (*models.Residence, error)
 	GetResidence(ctx context.Context, residenceID int) (*models.Residence, error)
 	GetAllResidences(ctx context.Context) ([]*models.Residence, error)
 
@@ -49,6 +51,11 @@ type AisRepository interface {
 	GetControlEvent(ctx context.Context, controlEventID int) (*models.ControlEvent, error)
 	GetAllControlEvents(ctx context.Context) ([]*models.ControlEvent, error)
 
+	CreateMark(ctx context.Context, date time.Time, value, controlEventID, studentID int) (*models.Mark, error)
 	GetMark(ctx context.Context, markID int) (*models.Mark, error)
 	GetAllMarks(ctx context.Context) ([]*models.Mark, error)
+
+	CreateBacklog(ctx context.Context, description string, disciplineID, studentID int) (*models.Backlog, error)
+	GetBacklog(ctx context.Context, backlogID int) (*models.Backlog, error)
+	GetAllBacklogs(ctx context.Context) ([]*models.Backlog, error)
 }

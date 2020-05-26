@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"time"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/internal/api/ais"
 	"github.com/WeCodingNow/AIS_SUG_backend/internal/api/models"
@@ -71,6 +72,10 @@ func (ais AisUseCase) GetAllContacts(ctx context.Context) ([]*models.Contact, er
 	return ais.aisRepo.GetAllContacts(ctx)
 }
 
+func (ais AisUseCase) CreateResidence(ctx context.Context, address, city string, community bool) (*models.Residence, error) {
+	return ais.aisRepo.CreateResidence(ctx, address, city, community)
+}
+
 func (ais AisUseCase) GetResidence(ctx context.Context, residenceID int) (*models.Residence, error) {
 	return ais.aisRepo.GetResidence(ctx, residenceID)
 }
@@ -103,10 +108,26 @@ func (ais AisUseCase) GetAllDisciplines(ctx context.Context) ([]*models.Discipli
 	return ais.aisRepo.GetAllDisciplines(ctx)
 }
 
+func (ais AisUseCase) CreateMark(ctx context.Context, date time.Time, value, controlEventID, studentID int) (*models.Mark, error) {
+	return ais.aisRepo.CreateMark(ctx, date, value, controlEventID, studentID)
+}
+
 func (ais AisUseCase) GetMark(ctx context.Context, markID int) (*models.Mark, error) {
 	return ais.aisRepo.GetMark(ctx, markID)
 }
 
 func (ais AisUseCase) GetAllMarks(ctx context.Context) ([]*models.Mark, error) {
 	return ais.aisRepo.GetAllMarks(ctx)
+}
+
+func (ais AisUseCase) CreateBacklog(ctx context.Context, description string, disciplineID, studentID int) (*models.Backlog, error) {
+	return ais.aisRepo.CreateBacklog(ctx, description, disciplineID, studentID)
+}
+
+func (ais AisUseCase) GetBacklog(ctx context.Context, backlogID int) (*models.Backlog, error) {
+	return ais.aisRepo.GetBacklog(ctx, backlogID)
+}
+
+func (ais AisUseCase) GetAllBacklogs(ctx context.Context) ([]*models.Backlog, error) {
+	return ais.aisRepo.GetAllBacklogs(ctx)
 }

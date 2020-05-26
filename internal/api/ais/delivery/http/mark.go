@@ -1,8 +1,10 @@
 package http
 
 import (
+	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/internal/api/ais"
 	"github.com/WeCodingNow/AIS_SUG_backend/internal/api/models"
@@ -42,4 +44,26 @@ func (h *Handler) GetAllMarks(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, jsonMarks)
+}
+
+type MarkInput struct {
+	Value          int       `json:"value"`
+	Date           time.Time `json:"date"`
+	ControlEventID int       `json:"control_event_id"`
+	StudentID      int       `json:"student_id"`
+}
+
+func (h *Handler) CreateMark(c echo.Context) error {
+	var inp MarkInput
+	c.Bind(&inp)
+
+	log.Print(inp)
+
+	mark, err := h.useCase.CreateMark(c.Request().Context(), inp.Date, inp.Value, inp.ControlEventID, inp.StudentID)
+
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, models.ToJSONMark(mark, nil))
 }

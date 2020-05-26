@@ -25,8 +25,8 @@ func NewRepoControlEventType() *repoControlEventType {
 	return &repoControlEventType{}
 }
 
-func (s *repoControlEventType) Fill(scannable pgorm.Scannable) {
-	scannable.Scan(&s.ID, &s.Def)
+func (s *repoControlEventType) Fill(scannable pgorm.Scannable) error {
+	return scannable.Scan(&s.ID, &s.Def)
 }
 
 func (s repoControlEventType) GetID() int {

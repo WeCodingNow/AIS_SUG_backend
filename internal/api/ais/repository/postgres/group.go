@@ -26,8 +26,8 @@ func NewRepoGroup() *repoGroup {
 	}
 }
 
-func (g *repoGroup) Fill(scannable pgorm.Scannable) {
-	scannable.Scan(&g.ID, &g.Number)
+func (g *repoGroup) Fill(scannable pgorm.Scannable) error {
+	return scannable.Scan(&g.ID, &g.Number)
 }
 
 func (g repoGroup) GetID() int {

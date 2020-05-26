@@ -26,6 +26,7 @@ type repoSemester struct {
 
 	Groups        map[int]*repoGroup
 	ControlEvents map[int]*repoControlEvent
+	Disciplines   map[int]*repoDiscipline
 	model         *models.Semester
 }
 
@@ -33,11 +34,12 @@ func NewRepoSemester() *repoSemester {
 	return &repoSemester{
 		Groups:        make(map[int]*repoGroup),
 		ControlEvents: make(map[int]*repoControlEvent),
+		Disciplines:   make(map[int]*repoDiscipline),
 	}
 }
 
-func (s *repoSemester) Fill(scannable pgorm.Scannable) {
-	scannable.Scan(&s.ID, &s.Number, &s.Beginning, &s.End)
+func (s *repoSemester) Fill(scannable pgorm.Scannable) error {
+	return scannable.Scan(&s.ID, &s.Number, &s.Beginning, &s.End)
 }
 
 func (s repoSemester) GetID() int {
@@ -46,6 +48,10 @@ func (s repoSemester) GetID() int {
 
 const semesterTable = "Семестр"
 const semesterFields = "id,номер,начало,конец"
+
+const disciplineSemesterMtM = "Дисциплина__Семестр"
+const disciplineSemesterMTMDisciplineKey = "id_дисциплины"
+const disciplineSemesterMTMSemesterKey = "id_семестра"
 
 func (c repoSemester) GetDescription() pgorm.ModelDescription {
 	return pgorm.ModelDescription{
@@ -64,36 +70,48 @@ func (c repoSemester) GetDescription() pgorm.ModelDescription {
 				DepForeignKeyField: controlEventSemesterFK,
 				ModelMaker:         func() pgorm.RepoModel { return NewRepoControlEvent() },
 			},
+			{
+				DependencyType:     pgorm.ManyToMany,
+				ForeignKeyField:    disciplineSemesterMTMSemesterKey,
+				DepForeignKeyField: disciplineSemesterMTMDisciplineKey,
+				ManyToManyTable:    disciplineSemesterMtM,
+				ModelMaker:         func() pgorm.RepoModel { return NewRepoDiscipline() },
+			},
 		},
 	}
 }
-func (c *repoSemester) toModel() *models.Semester {
-	if c.model == nil {
-		c.model = &models.Semester{
-			ID:        c.ID,
-			Number:    c.Number,
-			Beginning: c.Beginning.Time,
+func (s *repoSemester) toModel() *models.Semester {
+	if s.model == nil {
+		s.model = &models.Semester{
+			ID:        s.ID,
+			Number:    s.Number,
+			Beginning: s.Beginning.Time,
 		}
 
-		if c.End.Valid {
-			*c.model.End = c.End.Time
+		if s.End.Valid {
+			*s.model.End = s.End.Time
 		}
 
-		groups := make([]*models.Group, 0, len(c.Groups))
-		for _, repoG := range c.Groups {
+		groups := make([]*models.Group, 0, len(s.Groups))
+		for _, repoG := range s.Groups {
 			groups = append(groups, repoG.toModel())
 		}
-		c.model.Groups = groups
+		s.model.Groups = groups
 
-		controlEvents := make([]*models.ControlEvent, 0, len(c.Groups))
-		for _, repoCe := range c.ControlEvents {
+		controlEvents := make([]*models.ControlEvent, 0, len(s.Groups))
+		for _, repoCe := range s.ControlEvents {
 			controlEvents = append(controlEvents, repoCe.toModel())
 		}
-		c.model.ControlEvents = controlEvents
+		s.model.ControlEvents = controlEvents
 
+		disciplines := make([]*models.Discipline, 0, len(s.Disciplines))
+		for _, repoD := range s.Disciplines {
+			disciplines = append(disciplines, repoD.toModel())
+		}
+		s.model.Disciplines = disciplines
 	}
 
-	return c.model
+	return s.model
 }
 
 func (s *repoSemester) AcceptDep(dep interface{}) error {
@@ -102,6 +120,8 @@ func (s *repoSemester) AcceptDep(dep interface{}) error {
 		s.Groups[dep.ID] = dep
 	case *repoControlEvent:
 		s.ControlEvents[dep.ID] = dep
+	case *repoDiscipline:
+		s.Disciplines[dep.ID] = dep
 	default:
 		return fmt.Errorf("no dependency for %v", dep)
 	}

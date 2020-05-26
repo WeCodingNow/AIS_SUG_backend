@@ -25,8 +25,8 @@ func NewRepoCathedra() *repoCathedra {
 	}
 }
 
-func (c *repoCathedra) Fill(scannable pgorm.Scannable) {
-	scannable.Scan(&c.ID, &c.Name, &c.ShortName)
+func (c *repoCathedra) Fill(scannable pgorm.Scannable) error {
+	return scannable.Scan(&c.ID, &c.Name, &c.ShortName)
 }
 
 func (c repoCathedra) GetID() int {

@@ -19,7 +19,7 @@ func ToJSONContact(c *Contact, refs JSONRefTable) JSONMap {
 	}
 
 	if filled, ok := refs[StudentT]; !(ok && filled) {
-		retMap["student"] = ToJSONStudent(c.Student, withDontWant(refs, ContactT))
+		retMap["student"] = ToJSONStudent(c.Student, withDontWant(refs, ContactT, GroupT, MarkT))
 	}
 
 	return retMap

@@ -18,8 +18,8 @@ func NewRepoUser() *repoUser {
 	return &repoUser{}
 }
 
-func (u *repoUser) Fill(scannable pgorm.Scannable) {
-	scannable.Scan(&u.ID, &u.Username, &u.Password)
+func (u *repoUser) Fill(scannable pgorm.Scannable) error {
+	return scannable.Scan(&u.ID, &u.Username, &u.Password)
 }
 
 func (u *repoUser) GetID() int {

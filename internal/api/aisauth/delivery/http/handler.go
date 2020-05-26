@@ -47,16 +47,20 @@ func (h *Handler) GetRole(c echo.Context) error {
 func (h *Handler) GetInfo(c echo.Context) error {
 	userID := c.Get(auth.ContextUserID).(int)
 
-	studentID, err := h.useCase.GetUserStudentID(c.Request().Context(), userID)
+	info, err := h.useCase.GetInfo(c.Request().Context(), userID)
+
+	// studentID, err := h.useCase.GetUserStudentID(c.Request().Context(), userID)
 
 	if err != nil {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"user_id":    userID,
-		"student_id": studentID,
-	})
+	return c.JSON(http.StatusOK, info)
+
+	// return c.JSON(http.StatusOK, map[string]interface{}{
+	// 	"user_id":    userID,
+	// 	"student_id": studentID,
+	// })
 }
 
 type studentUserInput struct {

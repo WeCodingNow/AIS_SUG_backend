@@ -47,7 +47,7 @@ type RepoModel interface {
 	// GetFields() string
 	// GetDeps() []ModelDependency
 	GetID() int
-	Fill(scannable Scannable)
+	Fill(scannable Scannable) error
 	AcceptDep(dep interface{}) error
 }
 

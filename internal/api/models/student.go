@@ -10,6 +10,7 @@ type Student struct {
 	*Residence
 	Contacts []*Contact
 	Marks    []*Mark
+	Backlogs []*Backlog
 }
 
 func ToJSONStudent(s *Student, refs JSONRefTable) JSONMap {
@@ -42,6 +43,14 @@ func ToJSONStudent(s *Student, refs JSONRefTable) JSONMap {
 			markJSONs = append(markJSONs, ToJSONMark(mark, withDontWant(refs, StudentT)))
 		}
 		retMap["marks"] = markJSONs
+	}
+
+	if filled, ok := refs[BacklogT]; !(ok && filled) {
+		backlogJSONs := make([]JSONMap, 0, len(s.Backlogs))
+		for _, backlog := range s.Backlogs {
+			backlogJSONs = append(backlogJSONs, ToJsonBacklog(backlog, withDontWant(refs, StudentT, DisciplineT)))
+		}
+		retMap["backlogs"] = backlogJSONs
 	}
 
 	return retMap

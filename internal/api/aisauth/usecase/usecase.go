@@ -183,3 +183,28 @@ func (aue AisAuthUseCase) GetRoles(ctx context.Context) ([]*models.Role, error) 
 func (aue AisAuthUseCase) PromoteUser(ctx context.Context, userID int, roleID int) error {
 	return aue.repo.PromoteUser(ctx, userID, roleID)
 }
+
+func (aue AisAuthUseCase) GetInfo(ctx context.Context, userID int) (*aisauth.StudentInfo, error) {
+	info := &aisauth.StudentInfo{UserID: userID}
+	var err error
+
+	info.StudentID, err = aue.GetUserStudentID(ctx, userID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if info.StudentID != nil {
+		student, err := aue.aisUC.GetStudent(ctx, *info.StudentID)
+
+		if err != nil {
+			return nil, err
+		}
+
+		info.GroupID = new(int)
+		*info.GroupID = student.Group.ID
+	}
+
+	log.Print(*info.GroupID)
+	return info, nil
+}

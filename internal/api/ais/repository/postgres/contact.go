@@ -31,8 +31,8 @@ func NewRepoContact() *repoContact {
 	return &repoContact{}
 }
 
-func (s *repoContact) Fill(scannable pgorm.Scannable) {
-	scannable.Scan(&s.ID, &s.Def)
+func (s *repoContact) Fill(scannable pgorm.Scannable) error {
+	return scannable.Scan(&s.ID, &s.Def)
 }
 
 func (s repoContact) GetID() int {

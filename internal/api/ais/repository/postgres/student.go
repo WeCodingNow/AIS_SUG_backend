@@ -28,6 +28,7 @@ type repoStudent struct {
 	Residence *repoResidence
 	Marks     map[int]*repoMark
 	Contacts  map[int]*repoContact
+	Backlogs  map[int]*repoBacklog
 
 	model *models.Student
 }
@@ -36,11 +37,12 @@ func NewRepoStudent() *repoStudent {
 	return &repoStudent{
 		Marks:    make(map[int]*repoMark),
 		Contacts: make(map[int]*repoContact),
+		Backlogs: make(map[int]*repoBacklog),
 	}
 }
 
-func (s *repoStudent) Fill(scannable pgorm.Scannable) {
-	scannable.Scan(&s.ID, &s.Name, &s.SecondName, &s.ThirdName)
+func (s *repoStudent) Fill(scannable pgorm.Scannable) error {
+	return scannable.Scan(&s.ID, &s.Name, &s.SecondName, &s.ThirdName)
 }
 
 func (s repoStudent) GetID() int {
@@ -74,6 +76,11 @@ func (c repoStudent) GetDescription() pgorm.ModelDescription {
 			},
 			{
 				DependencyType:     pgorm.OneToMany,
+				DepForeignKeyField: backlogStudentFK,
+				ModelMaker:         func() pgorm.RepoModel { return NewRepoBacklog() },
+			},
+			{
+				DependencyType:     pgorm.OneToMany,
 				DepForeignKeyField: contactStudentFK,
 				ModelMaker:         func() pgorm.RepoModel { return NewRepoContact() },
 			},
@@ -102,9 +109,15 @@ func (c *repoStudent) toModel() *models.Student {
 		}
 		c.model.Marks = marks
 
+		backlogs := make([]*models.Backlog, 0, len(c.Backlogs))
+		for _, repoB := range c.Backlogs {
+			backlogs = append(backlogs, repoB.toModel())
+		}
+		c.model.Backlogs = backlogs
+
 		contacts := make([]*models.Contact, 0, len(c.Contacts))
-		for _, contactM := range c.Contacts {
-			contacts = append(contacts, contactM.toModel())
+		for _, repoC := range c.Contacts {
+			contacts = append(contacts, repoC.toModel())
 		}
 		c.model.Contacts = contacts
 	}
@@ -120,6 +133,8 @@ func (s *repoStudent) AcceptDep(dep interface{}) error {
 		s.Residence = dep
 	case *repoMark:
 		s.Marks[dep.ID] = dep
+	case *repoBacklog:
+		s.Backlogs[dep.ID] = dep
 	case *repoContact:
 		s.Contacts[dep.ID] = dep
 	default:

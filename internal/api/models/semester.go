@@ -10,6 +10,7 @@ type Semester struct {
 
 	Groups        []*Group
 	ControlEvents []*ControlEvent
+	Disciplines   []*Discipline
 }
 
 func ToJSONSemester(s *Semester, refs JSONRefTable) JSONMap {
@@ -34,6 +35,14 @@ func ToJSONSemester(s *Semester, refs JSONRefTable) JSONMap {
 			controlEventJSONs = append(controlEventJSONs, ToJSONControlEvent(controlEvent, withDontWant(refs, SemesterT, GroupT, ResidenceT, ContactT)))
 		}
 		retMap["control_events"] = controlEventJSONs
+	}
+
+	if filled, ok := refs[DisciplineT]; !(ok && filled) {
+		disciplineJSONs := make([]JSONMap, 0, len(s.Disciplines))
+		for _, discipline := range s.Disciplines {
+			disciplineJSONs = append(disciplineJSONs, ToJSONDiscipline(discipline, withDontWant(refs, SemesterT, ControlEventT)))
+		}
+		retMap["disciplines"] = disciplineJSONs
 	}
 
 	return retMap

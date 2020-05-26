@@ -21,6 +21,7 @@ const (
 	ContactT
 	DisciplineT
 	ResidenceT
+	BacklogT
 )
 
 func withDontWant(oldRefs JSONRefTable, types ...JSONModelType) JSONRefTable {

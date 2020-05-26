@@ -9,6 +9,29 @@ import (
 	"github.com/labstack/echo"
 )
 
+type PostResidence struct {
+	Address   string `json:"address"`
+	City      string `json:"city"`
+	Community bool   `json:"community"`
+}
+
+func (h *Handler) CreateResidence(c echo.Context) error {
+	var inp PostResidence
+	err := c.Bind(&inp)
+
+	if err != nil {
+		return err
+	}
+
+	newResidence, err := h.useCase.CreateResidence(c.Request().Context(), inp.Address, inp.City, inp.Community)
+
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, models.ToJSONResidence(newResidence, nil))
+}
+
 func (h *Handler) GetResidence(c echo.Context) error {
 	residenceIDParam := c.Param("id")
 	residenceID, err := strconv.Atoi(residenceIDParam)

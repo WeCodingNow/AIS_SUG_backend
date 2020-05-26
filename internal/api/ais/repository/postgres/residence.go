@@ -3,9 +3,11 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/internal/api/ais"
 	"github.com/WeCodingNow/AIS_SUG_backend/internal/api/models"
+	"github.com/WeCodingNow/AIS_SUG_backend/internal/utils"
 	"github.com/WeCodingNow/AIS_SUG_backend/pkg/pgorm"
 )
 
@@ -34,8 +36,8 @@ func NewRepoResidence() *repoResidence {
 	}
 }
 
-func (s *repoResidence) Fill(scannable pgorm.Scannable) {
-	scannable.Scan(&s.ID, &s.Address, &s.City, &s.Community)
+func (s *repoResidence) Fill(scannable pgorm.Scannable) error {
+	return scannable.Scan(&s.ID, &s.Address, &s.City, &s.Community)
 }
 
 func (s repoResidence) GetID() int {
@@ -124,4 +126,21 @@ func (r *DBAisRepository) GetAllResidences(ctx context.Context) ([]*models.Resid
 	}
 
 	return residences, nil
+}
+
+func (r *DBAisRepository) CreateResidence(ctx context.Context, address, city string, community bool) (*models.Residence, error) {
+	residenceRow := r.db.QueryRowContext(ctx, utils.MakeInsertQueryReturningModel(
+		residenceTable, strings.Split(residenceFields, ",")[1:]...),
+		address, city, community,
+	)
+
+	repoResidence := new(repoResidence)
+
+	err := repoResidence.Fill(residenceRow)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return repoResidence.toModel(), nil
 }

@@ -4,9 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/WeCodingNow/AIS_SUG_backend/internal/api/ais"
 	"github.com/WeCodingNow/AIS_SUG_backend/internal/api/models"
+	"github.com/WeCodingNow/AIS_SUG_backend/internal/utils"
 	"github.com/WeCodingNow/AIS_SUG_backend/pkg/pgorm"
 )
 
@@ -34,8 +36,8 @@ func NewRepoMark() *repoMark {
 	return &repoMark{}
 }
 
-func (s *repoMark) Fill(scannable pgorm.Scannable) {
-	scannable.Scan(&s.ID, &s.Date, &s.Value)
+func (s *repoMark) Fill(scannable pgorm.Scannable) error {
+	return scannable.Scan(&s.ID, &s.Date, &s.Value)
 }
 
 func (s repoMark) GetID() int {
@@ -128,4 +130,28 @@ func (r *DBAisRepository) GetAllMarks(ctx context.Context) ([]*models.Mark, erro
 	}
 
 	return marks, nil
+}
+
+func (r *DBAisRepository) CreateMark(ctx context.Context, date time.Time, value, controlEventID, studentID int) (*models.Mark, error) {
+	row := r.db.QueryRowContext(ctx,
+		fmt.Sprintf("%s RETURNING %s", utils.MakeInsertQuery(markTable, "id_контрольного_мероприятия", "id_студента", "дата_получения", "значение"), markFields),
+		controlEventID, studentID, date, value,
+	)
+
+	repoMark := NewRepoMark()
+
+	// err := row.Scan(&repoMark.ID)
+	err := repoMark.Fill(row)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// repoMark.ControlEvent = &repoControlEvent{ID: controlEventID}
+	// repoMark.Student = &repoStudent{ID: studentID}
+	// row := r.db.QueryRowContext(ctx, fmt.Sprintf("%s RETURNING id"), controlEventID, studentID, date, value)
+
+	return r.GetMark(ctx, repoMark.ID)
+	// return repoMark.toModel(), nil
+	// return r
 }
