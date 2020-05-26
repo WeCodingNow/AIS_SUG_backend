@@ -140,18 +140,11 @@ func (r *DBAisRepository) CreateMark(ctx context.Context, date time.Time, value,
 
 	repoMark := NewRepoMark()
 
-	// err := row.Scan(&repoMark.ID)
 	err := repoMark.Fill(row)
 
 	if err != nil {
 		return nil, err
 	}
 
-	// repoMark.ControlEvent = &repoControlEvent{ID: controlEventID}
-	// repoMark.Student = &repoStudent{ID: studentID}
-	// row := r.db.QueryRowContext(ctx, fmt.Sprintf("%s RETURNING id"), controlEventID, studentID, date, value)
-
 	return r.GetMark(ctx, repoMark.ID)
-	// return repoMark.toModel(), nil
-	// return r
 }
